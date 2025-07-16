@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Briefcase, Code, GraduationCap, Grip, Laptop, Building, User, Bot, Shell, Smile, Star } from 'lucide-react';
+import { Briefcase, Code, GraduationCap, Grip, Laptop, Building, User, Bot, Shell, Smile, Star, HardHat, CodeXml, TerminalSquare, GitBranch, Database, Cpu, Server, UserCheck, UserCog, UserCircle } from 'lucide-react';
 
 export const taskCategories = ["Sviluppo", "Riunione", "Formazione", "Altro"] as const;
 export type TaskCategory = (typeof taskCategories)[number];
@@ -49,10 +49,20 @@ export interface SaveSettings {
 
 export const userIcons: Record<string, LucideIcon> = {
     User,
+    UserCircle,
+    UserCog,
+    UserCheck,
     Bot,
-    Shell,
     Smile,
+    Shell,
     Star,
+    HardHat,
+    CodeXml,
+    TerminalSquare,
+    GitBranch,
+    Database,
+    Cpu,
+    Server,
 };
 
 export const categoryConfig: Record<TaskCategory, { icon: LucideIcon; color: string }> = {

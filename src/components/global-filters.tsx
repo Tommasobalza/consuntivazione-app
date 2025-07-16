@@ -5,11 +5,9 @@ import { useMemo } from 'react';
 import type { Task, TaskCategory, TaskLocation } from '@/lib/types';
 import { taskCategories, taskLocations } from '@/lib/types';
 import { getMonth, getYear } from 'date-fns';
-import { it } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Input } from './ui/input';
 
 interface GlobalFiltersProps {
   tasks: Task[];
@@ -39,15 +37,21 @@ export function GlobalFilters({
   setSelectedActivityName
 }: GlobalFiltersProps) {
 
-  const availableMonths = useMemo(() => {
+  const { availableMonths, availableActivities } = useMemo(() => {
     const monthSet = new Set<string>();
+    const activityNameSet = new Set<string>();
+    
     tasks.forEach(task => {
       const date = new Date(task.timestamp);
       const year = getYear(date);
       const month = getMonth(date);
       monthSet.add(`${year}-${month}`);
+      if(task.name) {
+        activityNameSet.add(task.name);
+      }
     });
-    return Array.from(monthSet).map(m => {
+
+    const months = Array.from(monthSet).map(m => {
       const [year, month] = m.split('-').map(Number);
       const date = new Date(year, month);
       return {
@@ -55,6 +59,10 @@ export function GlobalFilters({
         label: new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' }).format(date),
       };
     }).sort((a,b) => new Date(b.value).getTime() - new Date(a.value).getTime());
+    
+    const activities = Array.from(activityNameSet).sort();
+    
+    return { availableMonths: months, availableActivities: activities };
   }, [tasks]);
 
   const handleMonthChange = (value: string) => {
@@ -115,16 +123,20 @@ export function GlobalFilters({
           </div>
           <div className="space-y-2">
             <Label>Attività</Label>
-            <Input 
-              placeholder="Cerca per nome attività..."
-              value={selectedActivityName}
-              onChange={(e) => setSelectedActivityName(e.target.value)}
-            />
+            <Select onValueChange={(value) => setSelectedActivityName(value)} value={selectedActivityName}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona un'attività" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutte le Attività</SelectItem>
+                {availableActivities.map(activity => (
+                  <SelectItem key={activity} value={activity}>{activity}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
-
-    
