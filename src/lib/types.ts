@@ -32,9 +32,13 @@ export interface Task {
 export const leaveTypes = ["Ferie", "Malattia", "Festività"] as const;
 export type LeaveType = (typeof leaveTypes)[number];
 
+export const leaveDurations = [480, 240] as const;
+export type LeaveDuration = (typeof leaveDurations)[number];
+
 export interface LeaveDay {
   date: string; // ISO string for the day
   type: LeaveType;
+  duration: LeaveDuration;
 }
 
 export interface UserProfile {

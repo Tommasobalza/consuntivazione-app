@@ -33,11 +33,12 @@ interface DashboardProps {
   setSaveSettings: React.Dispatch<React.SetStateAction<SaveSettings>>;
 }
 
+const MAX_DURATION_PER_DAY = 480; // 8 hours in minutes
+
 export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings }: DashboardProps) {
   const [tasks, setTasks, saveTasks] = useLocalStorage<Task[]>('daily-tasks', []);
   const [tags, setTags, saveTags] = useLocalStorage<Tag[]>('activity-tags', [], { silent: true });
   const [leaveDays, setLeaveDays, saveLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', [], { silent: true });
-  // User profile and save settings are now managed in the parent Home component
   
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
   
@@ -66,8 +67,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     saveTasks();
     saveTags();
     saveLeaveDays();
-    // saveUserProfile(); is handled by parent now
-    // saveSettingsConfig(); is handled by parent now
     setHasPendingChanges(false);
     toast({
       title: "Modifiche salvate",
@@ -84,27 +83,20 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
       }));
   }, [tasks, selectedDate, tags]);
   
-  const isLeaveDay = useMemo(() => {
-    return leaveDays.some(d => isSameDay(new Date(d.date), selectedDate));
+  const leaveDurationForSelectedDate = useMemo(() => {
+    return leaveDays
+      .filter(d => isSameDay(new Date(d.date), selectedDate))
+      .reduce((total, day) => total + day.duration, 0);
   }, [leaveDays, selectedDate]);
 
   const handleAddTask = (task: Omit<Task, 'id' | 'timestamp' | 'tag'>) => {
-    if (isLeaveDay) {
-      toast({
-        title: "Giorno di assenza",
-        description: "Non puoi registrare attività in un giorno di ferie, malattia o festività.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const totalDurationForDay = tasksForSelectedDate.reduce((acc, curr) => acc + curr.duration, 0);
-    const maxDuration = 480; // 8 hours in minutes
+    const totalTaskDurationForDay = tasksForSelectedDate.reduce((acc, curr) => acc + curr.duration, 0);
+    const availableDuration = MAX_DURATION_PER_DAY - leaveDurationForSelectedDate;
 
-    if (totalDurationForDay + task.duration > maxDuration) {
+    if (totalTaskDurationForDay + task.duration > availableDuration) {
       toast({
         title: "Limite giornaliero superato",
-        description: `Non puoi registrare più di 8 ore al giorno. Hai ancora ${ (maxDuration - totalDurationForDay) / 60 } ore disponibili.`,
+        description: `Con l'assenza registrata, non puoi superare ${availableDuration / 60} ore di attività.`,
         variant: "destructive",
       });
       return;
@@ -140,37 +132,47 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const today = startOfDay(new Date());
 
   const missedDays = useMemo(() => {
-    const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
-    const leaveDaysSet = new Set(leaveDays.map(day => startOfDay(new Date(day.date)).toDateString()));
-    
-    // Check all days from the beginning of logged data up to today
     const firstLogDate = tasks.length > 0 ? startOfDay(new Date(Math.min(...tasks.map(t => new Date(t.timestamp).getTime())))) : today;
     const checkStartDate = isBefore(firstLogDate, startOfMonth(new Date("2024-01-01"))) ? firstLogDate : new Date("2024-01-01");
     
     const daysToCheck = eachDayOfInterval({ start: checkStartDate, end: today });
+    
+    const dayInfo = new Map<string, { tasks: number, leave: number }>();
+
+    tasks.forEach(task => {
+        const dayString = startOfDay(new Date(task.timestamp)).toDateString();
+        const current = dayInfo.get(dayString) || { tasks: 0, leave: 0 };
+        current.tasks += task.duration;
+        dayInfo.set(dayString, current);
+    });
+
+    leaveDays.forEach(day => {
+        const dayString = startOfDay(new Date(day.date)).toDateString();
+        const current = dayInfo.get(dayString) || { tasks: 0, leave: 0 };
+        current.leave += day.duration;
+        dayInfo.set(dayString, current);
+    });
 
     return daysToCheck.filter(day => {
         const dayString = day.toDateString();
         const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-        return !isWeekend && !loggedDays.has(dayString) && !leaveDaysSet.has(dayString);
+        if (isWeekend) return false;
+        
+        const info = dayInfo.get(dayString);
+        if (!info) return true; // Completely empty day
+        
+        return info.tasks + info.leave < MAX_DURATION_PER_DAY;
     });
   }, [tasks, leaveDays, today]);
-
+  
   const missedDaysCurrentMonth = useMemo(() => {
     const startOfCurrentMonth = startOfMonth(new Date(selectedYear, selectedMonth));
     const monthEndDate = getYear(startOfCurrentMonth) === getYear(today) && getMonth(startOfCurrentMonth) === getMonth(today) ? today : new Date(selectedYear, selectedMonth + 1, 0);
-     if (isBefore(monthEndDate, startOfCurrentMonth)) return [];
+    if (isBefore(monthEndDate, startOfCurrentMonth)) return [];
     
-    const daysInMonth = eachDayOfInterval({ start: startOfCurrentMonth, end: monthEndDate });
-    const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
-    const leaveDaysSet = new Set(leaveDays.map(day => startOfDay(new Date(day.date)).toDateString()));
-    
-    return daysInMonth.filter(day => {
-        const dayString = day.toDateString();
-        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-        return isBefore(day, today) && !isWeekend && !loggedDays.has(dayString) && !leaveDaysSet.has(dayString);
-    });
-  }, [tasks, leaveDays, today, selectedMonth, selectedYear]);
+    return missedDays.filter(day => getMonth(day) === selectedMonth && getYear(day) === selectedYear && isBefore(day, today));
+  }, [missedDays, selectedMonth, selectedYear, today]);
+
 
   const isCurrentMonthCompleted = useMemo(() => {
     const isCurrentMonth = getMonth(new Date()) === selectedMonth && getYear(new Date()) === selectedYear;
@@ -198,8 +200,9 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
       cursor: 'copy'
     },
     selected: {
-        backgroundColor: 'hsl(var(--primary) / 0.3)',
-        color: 'hsl(var(--primary-foreground))'
+        backgroundColor: 'hsl(var(--primary) / 0.1)',
+        color: 'hsl(var(--primary-foreground))',
+        borderColor: 'hsl(var(--primary))'
     },
     missed: {
       color: 'hsl(var(--destructive) / 0.9)',
@@ -247,24 +250,18 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   };
 
   const handlePasteTasks = (targetDate: Date) => {
-    const isTargetLeaveDay = leaveDays.some(d => isSameDay(new Date(d.date), targetDate));
-    if (isTargetLeaveDay) {
-        toast({
-            title: "Operazione non consentita",
-            description: "Non puoi incollare attività in un giorno di assenza.",
-            variant: "destructive",
-        });
-        return;
-    }
+    const leaveDurationOnTarget = leaveDays
+      .filter(d => isSameDay(new Date(d.date), targetDate))
+      .reduce((sum, d) => sum + d.duration, 0);
 
     const tasksOnTargetDay = tasks.filter(task => isSameDay(new Date(task.timestamp), targetDate));
     const durationOnTargetDay = tasksOnTargetDay.reduce((sum, task) => sum + task.duration, 0);
     const durationToCopy = tasksToCopy.reduce((sum, task) => sum + task.duration, 0);
 
-    if (durationOnTargetDay + durationToCopy > 480) {
+    if (durationOnTargetDay + durationToCopy + leaveDurationOnTarget > MAX_DURATION_PER_DAY) {
         toast({
             title: "Limite giornaliero superato",
-            description: "L'aggiunta di queste attività supererebbe il limite di 8 ore.",
+            description: "L'aggiunta di queste attività supererebbe il limite di 8 ore giornaliere.",
             variant: "destructive",
         });
         return;
@@ -304,7 +301,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle className="font-bold">Hai dei giorni non registrati!</AlertTitle>
                     <AlertDescription>
-                        Hai {missedDaysCurrentMonth.length} giorno/i passato/i in questo mese senza attività registrate. Vai alla scheda Calendario per compilare i dati mancanti.
+                        Hai {missedDaysCurrentMonth.length} giorno/i passato/i in questo mese senza attività registrate o parzialmente compilati. Vai alla scheda Calendario per compilare i dati mancanti.
                     </AlertDescription>
                 </Alert>
             ) : isCurrentMonthCompleted && (
@@ -376,7 +373,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
            <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
               <div className="grid gap-4 auto-rows-max">
-                 {isLeaveDay ? (
+                 {leaveDurationForSelectedDate >= MAX_DURATION_PER_DAY ? (
                   <Card className="flex items-center justify-center min-h-[400px]">
                       <div className="text-center text-muted-foreground">
                           <p className="text-lg font-semibold">Giorno di Assenza</p>
@@ -466,7 +463,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
             </div>
         </TabsContent>
         <TabsContent value="leave" className="space-y-4">
-          <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} />
+          <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} tasks={tasks} />
         </TabsContent>
       </Tabs>
     </div>
