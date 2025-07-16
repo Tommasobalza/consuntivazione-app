@@ -10,6 +10,16 @@ export type TaskDuration = (typeof taskDurations)[number];
 export const taskLocations = ["Smart Working", "Sede"] as const;
 export type TaskLocation = (typeof taskLocations)[number];
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  description: string;
+  category: TaskCategory;
+  location: TaskLocation;
+  duration: TaskDuration;
+}
+
 export interface Task {
   id: string;
   description: string;
@@ -17,7 +27,10 @@ export interface Task {
   category: TaskCategory;
   location: TaskLocation;
   timestamp: string; // ISO string
+  tagId?: string;
+  tag?: Tag;
 }
+
 
 export const categoryConfig: Record<TaskCategory, { icon: LucideIcon; color: string }> = {
   Sviluppo: { icon: Code, color: 'hsl(var(--chart-1))' },
@@ -30,3 +43,7 @@ export const locationConfig: Record<TaskLocation, { icon: LucideIcon }> = {
   'Smart Working': { icon: Laptop },
   'Sede': { icon: Building },
 };
+
+export const tailwindColors = [
+    "red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue", "indigo", "violet", "purple", "fuchsia", "pink", "rose"
+];

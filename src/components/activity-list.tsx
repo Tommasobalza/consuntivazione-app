@@ -99,7 +99,12 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
                   const LocationIcon = locationConfig[task.location].icon;
                   return (
                     <TableRow key={task.id}>
-                      <TableCell className="font-medium">{task.description}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                           {task.tag && <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: task.tag.color }}></span>}
+                          <span>{task.description}</span>
+                        </div>
+                        </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="flex items-center gap-2 w-fit">
                           <CategoryIcon className="h-4 w-4" style={{ color: categoryConfig[task.category].color }} />

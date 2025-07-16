@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Task } from '@/lib/types';
+import type { Task, Tag } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -15,9 +15,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { TagManager } from './tag-manager';
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
+  const [tags, setTags] = useLocalStorage<Tag[]>('activity-tags', []);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const handleAddTask = (task: Omit<Task, 'id' | 'timestamp'>) => {
@@ -38,21 +40,14 @@ export function Dashboard() {
   };
 
   const tasksForSelectedDate = useMemo(() => {
-    return tasks.filter(task => {
-      const taskDate = new Date(task.timestamp);
-      return isSameDay(taskDate, selectedDate);
-    });
-  }, [tasks, selectedDate]);
+    return tasks
+      .filter(task => isSameDay(new Date(task.timestamp), selectedDate))
+      .map(task => ({
+        ...task,
+        tag: task.tagId ? tags.find(t => t.id === task.tagId) : undefined
+      }));
+  }, [tasks, selectedDate, tags]);
   
-  const tasksForCurrentMonth = useMemo(() => {
-    const startOfCurrentMonth = startOfMonth(new Date());
-    const endOfCurrentMonth = new Date();
-    return tasks.filter(task => {
-      const taskDate = new Date(task.timestamp);
-      return taskDate >= startOfCurrentMonth && taskDate <= endOfCurrentMonth;
-    });
-  }, [tasks]);
-
   const today = startOfDay(new Date());
   const startOfCurrentMonth = startOfMonth(today);
   
@@ -117,10 +112,11 @@ export function Dashboard() {
             <SummaryCards tasks={tasksForSelectedDate} />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="lg:col-span-4 grid gap-4 auto-rows-max">
-                <ActivityLogger onAddTask={handleAddTask} />
+                <ActivityLogger onAddTask={handleAddTask} tags={tags} setTags={setTags} />
               </div>
               <div className="lg:col-span-3 grid gap-4 auto-rows-max">
                  <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
+                 <TagManager tags={tags} setTags={setTags} />
               </div>
             </div>
           </div>
@@ -128,7 +124,7 @@ export function Dashboard() {
         <TabsContent value="calendar" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <div className="lg:col-span-4 grid gap-4 auto-rows-max">
-              <ActivityLogger onAddTask={handleAddTask} />
+              <ActivityLogger onAddTask={handleAddTask} tags={tags} setTags={setTags} />
               <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
             </div>
             <div className="lg:col-span-3 grid gap-4 auto-rows-max">
@@ -148,6 +144,7 @@ export function Dashboard() {
                   />
                 </CardContent>
               </Card>
+               <TagManager tags={tags} setTags={setTags} />
             </div>
           </div>
         </TabsContent>
