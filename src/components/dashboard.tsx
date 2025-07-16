@@ -48,7 +48,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "all">("all");
   const [selectedLocation, setSelectedLocation] = useState<TaskLocation | "all">("all");
-  const [selectedActivityName, setSelectedActivityName] = useState<string>("");
+  const [selectedActivityName, setSelectedActivityName] = useState<string>("all");
   const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(new Date()));
 
   const [isCopying, setIsCopying] = useState(false);
@@ -132,7 +132,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
       const isMonthMatch = getMonth(taskDate) === selectedMonth && getYear(taskDate) === selectedYear;
       const isCategoryMatch = selectedCategory === 'all' || task.category === selectedCategory;
       const isLocationMatch = selectedLocation === 'all' || task.location === selectedLocation;
-      const isActivityNameMatch = selectedActivityName === '' || (task.name && task.name.toLowerCase().includes(selectedActivityName.toLowerCase()));
+      const isActivityNameMatch = selectedActivityName === 'all' || (task.name && task.name.toLowerCase() === selectedActivityName.toLowerCase());
       return isMonthMatch && isCategoryMatch && isLocationMatch && isActivityNameMatch;
     });
   }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation, selectedActivityName]);
@@ -181,6 +181,10 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     },
     copying: {
       cursor: 'copy'
+    },
+    selected: {
+        backgroundColor: 'hsl(var(--primary) / 0.3)',
+        color: 'hsl(var(--primary-foreground))'
     }
   };
 

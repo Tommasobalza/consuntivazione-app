@@ -128,7 +128,7 @@ export function GlobalFilters({
                 <SelectValue placeholder="Seleziona un'attività" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutte le Attività</SelectItem>
+                <SelectItem value="all">Tutte le Attività</SelectItem>
                 {availableActivities.map(activity => (
                   <SelectItem key={activity} value={activity}>{activity}</SelectItem>
                 ))}
