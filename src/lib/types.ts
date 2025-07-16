@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 import { Briefcase, Code, GraduationCap, Grip, Laptop, Building } from 'lucide-react';
 
@@ -34,6 +35,16 @@ export type LeaveType = (typeof leaveTypes)[number];
 export interface LeaveDay {
   date: string; // ISO string for the day
   type: LeaveType;
+}
+
+export interface UserProfile {
+    name: string;
+    role: string;
+    // avatarUrl?: string; // Future use
+}
+
+export interface SaveSettings {
+    autoSave: boolean;
 }
 
 

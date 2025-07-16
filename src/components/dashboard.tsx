@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
-import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay } from '@/lib/types';
+import { useState, useMemo, useEffect } from 'react';
+import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay, UserProfile, SaveSettings } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Save } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
@@ -25,11 +25,17 @@ import { useToast } from "@/hooks/use-toast";
 import { LeaveManager } from './leave-manager';
 import { CopyTasksCard } from './copy-tasks-card';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { SettingsManager } from './settings-manager';
 
 export function Dashboard() {
-  const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
-  const [tags, setTags] = useLocalStorage<Tag[]>('activity-tags', []);
-  const [leaveDays, setLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', []);
+  const [tasks, setTasks, saveTasks] = useLocalStorage<Task[]>('daily-tasks', []);
+  const [tags, setTags, saveTags] = useLocalStorage<Tag[]>('activity-tags', []);
+  const [leaveDays, setLeaveDays, saveLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', []);
+  const [userProfile, setUserProfile, saveUserProfile] = useLocalStorage<UserProfile>('user-profile', { name: 'Utente', role: 'Membro del Team' });
+  const [saveSettings, setSaveSettings, saveSettingsConfig] = useLocalStorage<SaveSettings>('save-settings', { autoSave: true });
+
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
   
@@ -41,6 +47,27 @@ export function Dashboard() {
 
   const [isCopying, setIsCopying] = useState(false);
   const [tasksToCopy, setTasksToCopy] = useState<Omit<Task, 'id' | 'timestamp'>[]>([]);
+
+  useEffect(() => {
+    if (!saveSettings.autoSave) {
+      setHasPendingChanges(true);
+    } else {
+      setHasPendingChanges(false);
+    }
+  }, [tasks, tags, leaveDays, userProfile, saveSettings.autoSave]);
+  
+  const handleSaveChanges = () => {
+    saveTasks();
+    saveTags();
+    saveLeaveDays();
+    saveUserProfile();
+    saveSettingsConfig();
+    setHasPendingChanges(false);
+    toast({
+      title: "Modifiche salvate",
+      description: "Tutti i tuoi dati sono stati salvati con successo.",
+    });
+  };
 
   const tasksForSelectedDate = useMemo(() => {
     return tasks
@@ -269,40 +296,48 @@ export function Dashboard() {
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
             <TabsTrigger value="leave">Assenze</TabsTrigger>
+            <TabsTrigger value="settings">Impostazioni</TabsTrigger>
           </TabsList>
-           <div className="text-right">
-              <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)}>
-                    <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <p className="text-lg font-semibold min-w-[220px] text-center">{isSameDay(selectedDate, today) ? "Oggi" : format(selectedDate, "EEEE, d MMMM", { locale: it })}</p>
-                 <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)}>
-                    <ChevronRight className="h-5 w-5" />
-                </Button>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <CalendarIcon className="h-5 w-5" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={(date) => {
-                                if (date) setSelectedDate(date);
-                            }}
-                            initialFocus
-                            locale={it}
-                            weekStartsOn={1}
-                            
-                        />
-                    </PopoverContent>
-                </Popover>
-              </div>
-            <p className="text-sm text-muted-foreground">
-              {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM", { locale: it })}`}
-            </p>
+          <div className="flex items-center gap-4">
+            {!saveSettings.autoSave && hasPendingChanges && (
+              <Button onClick={handleSaveChanges}>
+                <Save className="mr-2 h-4 w-4" />
+                Salva Modifiche
+              </Button>
+            )}
+            <div className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)}>
+                      <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <p className="text-lg font-semibold min-w-[220px] text-center">{isSameDay(selectedDate, today) ? "Oggi" : format(selectedDate, "EEEE, d MMMM", { locale: it })}</p>
+                   <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)}>
+                      <ChevronRight className="h-5 w-5" />
+                  </Button>
+                  <Popover>
+                      <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                              <CalendarIcon className="h-5 w-5" />
+                          </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                          <Calendar
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => {
+                                  if (date) setSelectedDate(date);
+                              }}
+                              initialFocus
+                              locale={it}
+                              weekStartsOn={1}
+                          />
+                      </PopoverContent>
+                  </Popover>
+                </div>
+              <p className="text-sm text-muted-foreground">
+                {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM", { locale: it })}`}
+              </p>
+            </div>
           </div>
         </div>
         
@@ -399,6 +434,14 @@ export function Dashboard() {
         </TabsContent>
         <TabsContent value="leave" className="space-y-4">
           <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} />
+        </TabsContent>
+        <TabsContent value="settings" className="space-y-4">
+          <SettingsManager 
+            userProfile={userProfile}
+            setUserProfile={setUserProfile}
+            saveSettings={saveSettings}
+            setSaveSettings={setSaveSettings}
+          />
         </TabsContent>
       </Tabs>
     </div>
