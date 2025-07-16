@@ -58,7 +58,8 @@ interface SettingsManagerProps {
   onSaveChanges: () => void;
 }
 
-const GITHUB_REPO_URL = "https://github.com/TUO_NOME_UTENTE/NOME_TUO_REPOSITORY"; // L'utente dovrà sostituire questo
+// IMPORTANTE: Sostituisci questo URL con quello del tuo repository GitHub dopo aver caricato il codice.
+const GITHUB_REPO_URL = "https://github.com/TUO_NOME_UTENTE/NOME_TUO_REPOSITORY";
 
 export function SettingsManager({ 
   userProfile, 
@@ -137,14 +138,12 @@ export function SettingsManager({
         if (typeof text !== 'string') throw new Error("File non valido");
         const data = JSON.parse(text);
         
-        // Validazione base
         const requiredKeys = ['daily-tasks', 'activity-tags', 'leave-days', 'user-profile', 'save-settings'];
         const dataKeys = Object.keys(data);
         if (!requiredKeys.every(key => dataKeys.includes(key))) {
             throw new Error("Il file di backup non ha un formato valido.");
         }
 
-        // Sovrascrivi localStorage
         Object.keys(data).forEach(key => {
             localStorage.setItem(key, JSON.stringify(data[key]));
         });
@@ -154,7 +153,6 @@ export function SettingsManager({
           description: "I tuoi dati sono stati ripristinati. La pagina verrà ricaricata.",
         });
 
-        // Ricarica la pagina per applicare le modifiche
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -167,7 +165,6 @@ export function SettingsManager({
           variant: "destructive",
         });
       } finally {
-        // Resetta l'input per permettere di ricaricare lo stesso file
         if(event.target) event.target.value = '';
       }
     };
@@ -371,3 +368,5 @@ export function SettingsManager({
     </div>
   );
 }
+
+    
