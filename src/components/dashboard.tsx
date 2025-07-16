@@ -286,8 +286,8 @@ export function Dashboard() {
         <TabsContent value="home" className="space-y-4">
            <div className="space-y-4">
             <SummaryCards tasks={tasksForSelectedDate} isLeaveDay={isLeaveDay} />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <div className="lg:col-span-4 grid gap-4 auto-rows-max">
+            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+              <div className="grid gap-4 auto-rows-max">
                  {isLeaveDay ? (
                   <Card className="flex items-center justify-center min-h-[400px]">
                       <div className="text-center text-muted-foreground">
@@ -298,7 +298,7 @@ export function Dashboard() {
                  ) : <ActivityLogger onAddTask={handleAddTask} tags={tags} setTags={setTags} />}
                  <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} />
               </div>
-              <div className="lg:col-span-3 grid gap-4 auto-rows-max">
+              <div className="grid gap-4 auto-rows-max">
                  <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
                  <TagManager tags={tags} setTags={setTags} />
               </div>
@@ -306,8 +306,8 @@ export function Dashboard() {
           </div>
         </TabsContent>
         <TabsContent value="calendar" className="space-y-4">
-           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <div className="lg:col-span-4 grid gap-4 auto-rows-max">
+           <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+              <div className="grid gap-4 auto-rows-max">
                  <Card className={isCopying ? "border-primary ring-2 ring-primary" : ""}>
                     <CardHeader>
                         <CardTitle>Panoramica Calendario</CardTitle>
@@ -330,7 +330,7 @@ export function Dashboard() {
                 </Card>
                 <CopyTasksCard isCopying={isCopying} onToggleCopyMode={handleToggleCopyMode} />
               </div>
-              <div className="lg:col-span-3 grid gap-4 auto-rows-max">
+              <div className="grid gap-4 auto-rows-max">
                 <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
               </div>
            </div>
@@ -347,12 +347,12 @@ export function Dashboard() {
             selectedLocation={selectedLocation}
             setSelectedLocation={setSelectedLocation}
           />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <div className="lg:col-span-4 grid gap-4 auto-rows-max">
+          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+              <div className="grid gap-4 auto-rows-max">
                  <InsightsReport tasks={filteredTasksForStats} />
                  <PresenceStats tasks={filteredTasksForStats} />
               </div>
-              <div className="lg:col-span-3 grid gap-4 auto-rows-max">
+              <div className="grid gap-4 auto-rows-max">
                  <Card>
                     <CardHeader>
                         <CardTitle>Distribuzione per Categoria</CardTitle>
@@ -378,6 +378,8 @@ export function Dashboard() {
     </div>
   );
 }
+
+    
 
     
 
