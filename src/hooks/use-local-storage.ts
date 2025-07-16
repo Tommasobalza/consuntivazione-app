@@ -4,10 +4,16 @@
 import { useState, useEffect, Dispatch, SetStateAction, useCallback, useContext } from 'react';
 import { AutoSaveContext } from '@/context/autosave-context';
 
+interface UseLocalStorageOptions {
+  silent?: boolean;
+}
+
 export function useLocalStorage<T>(
   key: string, 
-  initialValue: T
+  initialValue: T,
+  options: UseLocalStorageOptions = {}
 ): [T, Dispatch<SetStateAction<T>>, () => void] {
+  const { silent = false } = options;
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [isInitialized, setIsInitialized] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
@@ -33,24 +39,24 @@ export function useLocalStorage<T>(
   }, [key]);
 
   const saveValue = useCallback(() => {
-    if (autoSaveContext && autoSaveEnabled) {
+    if (autoSaveContext && autoSaveEnabled && !silent) {
       autoSaveContext.setIsSaving(true);
     }
     try {
         setTimeout(() => {
           window.localStorage.setItem(key, JSON.stringify(storedValue));
-          if (autoSaveContext && autoSaveEnabled) {
+          if (autoSaveContext && autoSaveEnabled && !silent) {
             autoSaveContext.setIsSaving(false);
             autoSaveContext.setJustSaved(true);
           }
         }, 500); // Simulate network latency
     } catch (error) {
       console.error(`Error writing to localStorage key “${key}”:`, error);
-       if (autoSaveContext) {
+       if (autoSaveContext && !silent) {
         autoSaveContext.setIsSaving(false);
       }
     }
-  }, [key, storedValue, autoSaveContext, autoSaveEnabled]);
+  }, [key, storedValue, autoSaveContext, autoSaveEnabled, silent]);
 
   const manualSave = useCallback(() => {
      try {

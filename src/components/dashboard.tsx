@@ -35,8 +35,8 @@ interface DashboardProps {
 
 export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings }: DashboardProps) {
   const [tasks, setTasks, saveTasks] = useLocalStorage<Task[]>('daily-tasks', []);
-  const [tags, setTags, saveTags] = useLocalStorage<Tag[]>('activity-tags', []);
-  const [leaveDays, setLeaveDays, saveLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', []);
+  const [tags, setTags, saveTags] = useLocalStorage<Tag[]>('activity-tags', [], { silent: true });
+  const [leaveDays, setLeaveDays, saveLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', [], { silent: true });
   // User profile and save settings are now managed in the parent Home component
   
   const [hasPendingChanges, setHasPendingChanges] = useState(false);

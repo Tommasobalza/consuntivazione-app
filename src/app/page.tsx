@@ -14,8 +14,8 @@ import { AutoSaveProvider } from '@/context/autosave-context';
 import { AutoSaveIndicator } from '@/components/auto-save-indicator';
 
 export default function Home() {
-  const [userProfile, setUserProfile] = useLocalStorage<UserProfile>('user-profile', { name: 'Utente', role: 'Membro del Team', icon: 'User' });
-  const [saveSettings, setSaveSettings] = useLocalStorage<SaveSettings>('save-settings', { autoSave: true });
+  const [userProfile, setUserProfile] = useLocalStorage<UserProfile>('user-profile', { name: 'Utente', role: 'Membro del Team', icon: 'User' }, { silent: true });
+  const [saveSettings, setSaveSettings] = useLocalStorage<SaveSettings>('save-settings', { autoSave: true }, { silent: true });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { toast } = useToast();
 
