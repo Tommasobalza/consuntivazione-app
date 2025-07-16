@@ -9,6 +9,7 @@ import { it } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from './ui/input';
 
 interface GlobalFiltersProps {
   tasks: Task[];
@@ -20,6 +21,8 @@ interface GlobalFiltersProps {
   setSelectedCategory: (category: TaskCategory | 'all') => void;
   selectedLocation: TaskLocation | 'all';
   setSelectedLocation: (location: TaskLocation | 'all') => void;
+  selectedActivityName: string;
+  setSelectedActivityName: (name: string) => void;
 }
 
 export function GlobalFilters({
@@ -32,6 +35,8 @@ export function GlobalFilters({
   setSelectedCategory,
   selectedLocation,
   setSelectedLocation,
+  selectedActivityName,
+  setSelectedActivityName
 }: GlobalFiltersProps) {
 
   const availableMonths = useMemo(() => {
@@ -64,7 +69,7 @@ export function GlobalFilters({
         <CardTitle>Filtri Globali</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label>Mese</Label>
             <Select onValueChange={handleMonthChange} value={`${selectedYear}-${selectedMonth}`}>
@@ -108,8 +113,18 @@ export function GlobalFilters({
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label>Attività</Label>
+            <Input 
+              placeholder="Cerca per nome attività..."
+              value={selectedActivityName}
+              onChange={(e) => setSelectedActivityName(e.target.value)}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+
+    

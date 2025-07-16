@@ -48,6 +48,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "all">("all");
   const [selectedLocation, setSelectedLocation] = useState<TaskLocation | "all">("all");
+  const [selectedActivityName, setSelectedActivityName] = useState<string>("");
   const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(new Date()));
 
   const [isCopying, setIsCopying] = useState(false);
@@ -131,9 +132,10 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
       const isMonthMatch = getMonth(taskDate) === selectedMonth && getYear(taskDate) === selectedYear;
       const isCategoryMatch = selectedCategory === 'all' || task.category === selectedCategory;
       const isLocationMatch = selectedLocation === 'all' || task.location === selectedLocation;
-      return isMonthMatch && isCategoryMatch && isLocationMatch;
+      const isActivityNameMatch = selectedActivityName === '' || task.name.toLowerCase().includes(selectedActivityName.toLowerCase());
+      return isMonthMatch && isCategoryMatch && isLocationMatch && isActivityNameMatch;
     });
-  }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation]);
+  }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation, selectedActivityName]);
 
   const today = startOfDay(new Date());
   const startOfCurrentMonth = startOfMonth(new Date(selectedYear, selectedMonth));
@@ -407,6 +409,8 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
             setSelectedCategory={setSelectedCategory}
             selectedLocation={selectedLocation}
             setSelectedLocation={setSelectedLocation}
+            selectedActivityName={selectedActivityName}
+            setSelectedActivityName={setSelectedActivityName}
           />
           <SummaryCards tasks={filteredTasksForStats} />
           <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
@@ -443,3 +447,5 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     </div>
   );
 }
+
+    
