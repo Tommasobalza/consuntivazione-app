@@ -32,7 +32,7 @@ export function CategoryDistributionChart({ tasks }: CategoryDistributionChartPr
   if (tasks.length === 0) {
     return (
       <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground">
-        Log some tasks to see your time distribution.
+        Nessun dato per i filtri selezionati.
       </div>
     )
   }

@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Task, Tag } from '@/lib/types';
+import type { Task, Tag, TaskCategory, TaskLocation } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -12,15 +13,23 @@ import { InsightsReport } from '@/components/insights-report';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay } from 'date-fns';
+import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isEqual } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { TagManager } from './tag-manager';
+import { GlobalFilters } from './global-filters';
+import { PresenceStats } from './presence-stats';
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
   const [tags, setTags] = useLocalStorage<Tag[]>('activity-tags', []);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  
+  // State for global filters
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "all">("all");
+  const [selectedLocation, setSelectedLocation] = useState<TaskLocation | "all">("all");
 
   const handleAddTask = (task: Omit<Task, 'id' | 'timestamp'>) => {
     const newTask: Task = {
@@ -48,6 +57,16 @@ export function Dashboard() {
       }));
   }, [tasks, selectedDate, tags]);
   
+  const filteredTasksForStats = useMemo(() => {
+    return tasks.filter(task => {
+      const taskDate = new Date(task.timestamp);
+      const isMonthMatch = getMonth(taskDate) === selectedMonth && getYear(taskDate) === selectedYear;
+      const isCategoryMatch = selectedCategory === 'all' || task.category === selectedCategory;
+      const isLocationMatch = selectedLocation === 'all' || task.location === selectedLocation;
+      return isMonthMatch && isCategoryMatch && isLocationMatch;
+    });
+  }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation]);
+
   const today = startOfDay(new Date());
   const startOfCurrentMonth = startOfMonth(today);
   
@@ -73,14 +92,6 @@ export function Dashboard() {
     }
   };
 
-  const handleTabChange = (value: string) => {
-    if (value === "today" || value === "calendar" || value === "stats") {
-      if (!isSameDay(selectedDate, new Date()) && value === "today") {
-          setSelectedDate(new Date());
-      }
-    }
-  };
-
   return (
     <div className="space-y-4">
       {missedDays.length > 0 && isSameDay(selectedDate, today) && (
@@ -92,15 +103,15 @@ export function Dashboard() {
           </AlertDescription>
         </Alert>
       )}
-      <Tabs defaultValue="today" className="space-y-4" onValueChange={handleTabChange}>
+      <Tabs defaultValue="today" className="space-y-4">
         <div className='flex justify-between items-start'>
           <TabsList>
             <TabsTrigger value="today">Oggi</TabsTrigger>
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
           </TabsList>
-          <div className="text-right">
-            <p className="text-lg font-semibold">{format(selectedDate, "EEEE, d MMMM")}</p>
+           <div className="text-right">
+            <p className="text-lg font-semibold">{isEqual(startOfDay(selectedDate), startOfDay(new Date())) ? "Oggi" : format(selectedDate, "EEEE, d MMMM")}</p>
             <p className="text-sm text-muted-foreground">
               {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM")}`}
             </p>
@@ -149,27 +160,39 @@ export function Dashboard() {
           </div>
         </TabsContent>
          <TabsContent value="stats" className="space-y-4">
+          <GlobalFilters
+            tasks={tasks}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedLocation={selectedLocation}
+            setSelectedLocation={setSelectedLocation}
+          />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="lg:col-span-4 grid gap-4 auto-rows-max">
-                 <InsightsReport tasks={tasksForSelectedDate} />
+                 <InsightsReport tasks={filteredTasksForStats} />
+                 <PresenceStats tasks={filteredTasksForStats} />
               </div>
               <div className="lg:col-span-3 grid gap-4 auto-rows-max">
                  <Card>
                     <CardHeader>
                         <CardTitle>Distribuzione per Categoria</CardTitle>
-                        <CardDescription>Riepilogo del tempo per il giorno selezionato.</CardDescription>
+                        <CardDescription>Riepilogo del tempo per il periodo selezionato.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <CategoryDistributionChart tasks={tasksForSelectedDate} />
+                        <CategoryDistributionChart tasks={filteredTasksForStats} />
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle>Distribuzione per Località</CardTitle>
-                        <CardDescription>Riepilogo del tempo per il giorno selezionato.</CardDescription>
+                        <CardDescription>Riepilogo del tempo per il periodo selezionato.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <LocationDistributionChart tasks={tasksForSelectedDate} />
+                        <LocationDistributionChart tasks={filteredTasksForStats} />
                     </CardContent>
                 </Card>
               </div>

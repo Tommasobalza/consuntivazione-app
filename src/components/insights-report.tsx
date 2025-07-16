@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import type { Task } from "@/lib/types"
 import { generateInsightsReport } from "@/ai/flows/generate-insights-report"
 import { Button } from "@/components/ui/button"
@@ -18,12 +18,16 @@ export function InsightsReport({ tasks }: InsightsReportProps) {
   const [report, setReport] = useState<string | null>(null)
   const { toast } = useToast()
 
+  useEffect(() => {
+    setReport(null);
+  }, [tasks]);
+
   const handleGenerateReport = () => {
     startTransition(async () => {
       if (tasks.length === 0) {
         toast({
           title: "Nessuna attività da analizzare",
-          description: "Registra qualche attività prima di generare un report.",
+          description: "Nessuna attività trovata per i filtri selezionati.",
           variant: "destructive",
         })
         return
@@ -51,10 +55,10 @@ export function InsightsReport({ tasks }: InsightsReportProps) {
   }
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col min-h-[300px]">
       <CardHeader>
         <CardTitle>Approfondimenti IA</CardTitle>
-        <CardDescription>Genera un report per scoprire pattern nel tuo lavoro.</CardDescription>
+        <CardDescription>Genera un report per scoprire pattern nel tuo lavoro in base ai filtri selezionati.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
         {report ? (

@@ -8,7 +8,6 @@ import {
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { CardDescription } from "../ui/card"
 
 interface LocationDistributionChartProps {
   tasks: Task[]
@@ -36,7 +35,6 @@ export function LocationDistributionChart({ tasks }: LocationDistributionChartPr
       )
     });
     
-    // Ensure both locations are always present in the data
     const data = Array.from(Object.keys(locationConfig)).map(location => ({
         name: location,
         value: locationMap.get(location) || 0,
@@ -49,7 +47,7 @@ export function LocationDistributionChart({ tasks }: LocationDistributionChartPr
   if (tasks.length === 0) {
     return (
       <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground">
-        Registra delle attività per vedere la distribuzione.
+        Nessun dato per i filtri selezionati.
       </div>
     )
   }
