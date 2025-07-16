@@ -19,6 +19,8 @@ interface SettingsDialogProps {
   setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   saveSettings: SaveSettings;
   setSaveSettings: React.Dispatch<React.SetStateAction<SaveSettings>>;
+  hasPendingChanges: boolean;
+  onSaveChanges: () => void;
 }
 
 export function SettingsDialog({
@@ -28,6 +30,8 @@ export function SettingsDialog({
   setUserProfile,
   saveSettings,
   setSaveSettings,
+  hasPendingChanges,
+  onSaveChanges,
 }: SettingsDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -44,6 +48,8 @@ export function SettingsDialog({
             setUserProfile={setUserProfile}
             saveSettings={saveSettings}
             setSaveSettings={setSaveSettings}
+            hasPendingChanges={hasPendingChanges}
+            onSaveChanges={onSaveChanges}
           />
         </div>
       </DialogContent>

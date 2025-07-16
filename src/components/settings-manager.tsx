@@ -11,6 +11,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -25,6 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "./theme-toggle";
+import { Button } from "./ui/button";
+import { Save } from "lucide-react";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Il nome deve avere almeno 2 caratteri.").max(50),
@@ -39,13 +42,17 @@ interface SettingsManagerProps {
   setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   saveSettings: SaveSettings;
   setSaveSettings: React.Dispatch<React.SetStateAction<SaveSettings>>;
+  hasPendingChanges: boolean;
+  onSaveChanges: () => void;
 }
 
 export function SettingsManager({ 
   userProfile, 
   setUserProfile, 
   saveSettings, 
-  setSaveSettings 
+  setSaveSettings,
+  hasPendingChanges,
+  onSaveChanges
 }: SettingsManagerProps) {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -163,7 +170,6 @@ export function SettingsManager({
             </CardDescription>
             </CardHeader>
             <CardContent>
-            <div className="flex flex-col gap-4">
               <div className="flex items-center space-x-4 rounded-md border p-4">
                   <div className="flex-1 space-y-1">
                       <p className="text-sm font-medium leading-none">
@@ -178,17 +184,20 @@ export function SettingsManager({
                       onCheckedChange={handleAutoSaveChange}
                   />
               </div>
-              {saveSettings.autoSave ? (
-                   <p className="text-sm text-muted-foreground">
-                      Il salvataggio automatico è attivo. Le modifiche vengono salvate in tempo reale.
-                   </p>
-              ) : (
-                  <p className="text-sm text-muted-foreground">
-                      Sei in modalità di salvataggio manuale. Ricorda di cliccare su "Salva Modifiche" per non perdere il tuo lavoro.
-                  </p>
-              )}
-            </div>
             </CardContent>
+             {!saveSettings.autoSave && hasPendingChanges && (
+                <CardFooter className="pt-4">
+                    <div className="flex flex-col gap-2 w-full">
+                         <p className="text-sm text-muted-foreground">
+                            Hai delle modifiche non salvate. Clicca qui per salvarle.
+                         </p>
+                        <Button onClick={onSaveChanges} className="w-full">
+                            <Save className="mr-2 h-4 w-4" />
+                            Salva Tutte le Modifiche
+                        </Button>
+                    </div>
+                </CardFooter>
+            )}
         </Card>
       </div>
     </div>
