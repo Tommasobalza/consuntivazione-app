@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Briefcase, Code, GraduationCap, Grip, Laptop, Building, User, Bot, Shell, Smile, Star, HardHat, CodeXml, TerminalSquare, GitBranch, Database, Cpu, Server, UserCheck, UserCog, UserCircle } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
 
 export const taskCategories = ["Sviluppo", "Riunione", "Formazione", "Altro"] as const;
 export type TaskCategory = (typeof taskCategories)[number];
@@ -84,3 +85,5 @@ export const locationConfig: Record<TaskLocation, { icon: LucideIcon }> = {
 export const tailwindColors = [
     "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9", "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#f43f5e"
 ];
+
+export type { DateRange };

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay, UserProfile, SaveSettings } from '@/lib/types';
+import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay, UserProfile, SaveSettings, DateRange } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -13,8 +13,9 @@ import { InsightsReport } from '@/components/insights-report';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear } from 'date-fns';
+import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isWeekend } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { add, differenceInDays } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Save } from 'lucide-react';
 import { TagManager } from './tag-manager';
@@ -25,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { LeaveManager } from './leave-manager';
 import { CopyTasksCard } from './copy-tasks-card';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+
 
 interface DashboardProps {
   userProfile: UserProfile;
@@ -54,6 +57,9 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
   const [isCopying, setIsCopying] = useState(false);
   const [tasksToCopy, setTasksToCopy] = useState<Omit<Task, 'id' | 'timestamp'>[]>([]);
+
+  const [range, setRange] = useState<DateRange | undefined>(undefined);
+  const [isConfirmingPaste, setIsConfirmingPaste] = useState(false);
 
   useEffect(() => {
     if (!saveSettings.autoSave) {
@@ -155,8 +161,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
     return daysToCheck.filter(day => {
         const dayString = day.toDateString();
-        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-        if (isWeekend) return false;
+        if (isWeekend(day)) return false;
         
         const info = dayInfo.get(dayString);
         if (!info) return true; // Completely empty day
@@ -189,42 +194,53 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
   const calendarModifiersStyles = {
     logged: {
-      color: '#16a34a',
+      color: '#16a34a', // More vibrant green
       fontWeight: 'bold',
     },
     leave: {
       color: 'hsl(var(--accent))',
-      backgroundColor: 'hsl(var(--accent) / 0.1)',
+      backgroundColor: 'hsl(var(--accent) / 0.2)', // Higher transparency
       textDecoration: 'line-through'
     },
     copying: {
       cursor: 'copy'
     },
     missed: {
-      color: '#dc2626',
+      color: '#ef4444', // More vibrant red
       fontWeight: 'bold'
-    }
+    },
+    selected: {
+        backgroundColor: 'hsl(var(--primary) / 0.1)',
+        border: '1px solid hsl(var(--primary))',
+        color: 'inherit',
+    },
   };
 
   const handleDateChange = (days: number) => {
     setSelectedDate(currentDate => addDays(currentDate, days));
   };
-  
-  const handleSelectDate = (date: Date | undefined) => {
-    if (!date) return;
 
+  const handleDayClick = (day: Date, modifiers: { selected?: boolean }, e: React.MouseEvent) => {
     if (isCopying) {
-      handlePasteTasks(date);
+        if (e.shiftKey && range?.from) {
+            const newRange = { from: range.from, to: day };
+            setRange(newRange);
+            setIsConfirmingPaste(true);
+        } else {
+            setRange({ from: day, to: undefined });
+        }
     } else {
-      setSelectedDate(date);
-      setCalendarMonth(startOfMonth(date));
+        setSelectedDate(day);
+        setCalendarMonth(startOfMonth(day));
     }
-  }
+  };
+
 
   const handleToggleCopyMode = () => {
     if (isCopying) {
       setIsCopying(false);
       setTasksToCopy([]);
+      setRange(undefined);
     } else {
       const tasksOnSelectedDay = tasks.filter(task => isSameDay(new Date(task.timestamp), selectedDate));
       if (tasksOnSelectedDay.length === 0) {
@@ -240,43 +256,69 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
       setIsCopying(true);
       toast({
         title: "Modalità copia attiva",
-        description: "Seleziona una data sul calendario per incollare le attività."
+        description: "Seleziona una data o un intervallo (con SHIFT) sul calendario per incollare."
       });
     }
   };
 
-  const handlePasteTasks = (targetDate: Date) => {
-    const leaveDurationOnTarget = leaveDays
-      .filter(d => isSameDay(new Date(d.date), targetDate))
-      .reduce((sum, d) => sum + d.duration, 0);
+  const handleConfirmPaste = () => {
+    if (!range) return;
 
-    const tasksOnTargetDay = tasks.filter(task => isSameDay(new Date(task.timestamp), targetDate));
-    const durationOnTargetDay = tasksOnTargetDay.reduce((sum, task) => sum + task.duration, 0);
-    const durationToCopy = tasksToCopy.reduce((sum, task) => sum + task.duration, 0);
+    const from = range.from ? startOfDay(range.from) : undefined;
+    const to = range.to ? startOfDay(range.to) : from;
 
-    if (durationOnTargetDay + durationToCopy + leaveDurationOnTarget > MAX_DURATION_PER_DAY) {
-        toast({
-            title: "Limite giornaliero superato",
-            description: "L'aggiunta di queste attività supererebbe il limite di 8 ore giornaliere.",
-            variant: "destructive",
+    if (!from) return;
+
+    const daysInInterval = eachDayOfInterval({ start: from, end: to });
+
+    const newTasks: Task[] = [];
+    let conflictedDays = 0;
+
+    daysInInterval.forEach(day => {
+        if (isWeekend(day)) return;
+
+        const leaveOnDay = leaveDays.some(d => isSameDay(new Date(d.date), day));
+        if (leaveOnDay) return;
+
+        const tasksOnDay = tasks.filter(t => isSameDay(new Date(t.timestamp), day));
+        const durationOnDay = tasksOnDay.reduce((sum, task) => sum + task.duration, 0);
+        const durationToCopy = tasksToCopy.reduce((sum, task) => sum + task.duration, 0);
+
+        if (durationOnDay + durationToCopy > MAX_DURATION_PER_DAY) {
+            conflictedDays++;
+            return;
+        }
+
+        tasksToCopy.forEach(taskToCopy => {
+            newTasks.push({
+                ...taskToCopy,
+                id: crypto.randomUUID(),
+                timestamp: day.toISOString(),
+            });
         });
-        return;
+    });
+
+    if (newTasks.length > 0) {
+      setTasks(prevTasks => [...prevTasks, ...newTasks]);
+      toast({
+          title: "Attività copiate con successo!",
+          description: `Attività incollate su ${newTasks.length / tasksToCopy.length} giorni. ${conflictedDays > 0 ? `${conflictedDays} giorni saltati per conflitto.` : ''}`
+      });
+    } else if (conflictedDays > 0) {
+         toast({
+            title: "Copia non riuscita",
+            description: `Tutti i ${conflictedDays} giorni selezionati avevano conflitti di durata e sono stati saltati.`,
+            variant: "destructive"
+        });
     }
 
-    const newTasks: Task[] = tasksToCopy.map(task => ({
-        ...task,
-        id: crypto.randomUUID(),
-        timestamp: targetDate.toISOString(),
-    }));
 
-    setTasks(prevTasks => [...prevTasks, ...newTasks]);
-    toast({
-        title: "Attività copiate con successo!",
-        description: `${newTasks.length} attività aggiunte al ${format(targetDate, "d MMMM yyyy", { locale: it })}.`
-    });
     setIsCopying(false);
     setTasksToCopy([]);
+    setRange(undefined);
+    setIsConfirmingPaste(false);
   };
+
 
   const handleTabChange = (value: string) => {
     if (value === "home") {
@@ -290,6 +332,27 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   
   return (
     <div className="space-y-4">
+      <AlertDialog open={isConfirmingPaste} onOpenChange={setIsConfirmingPaste}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Confermi di incollare le attività?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Stai per incollare {tasksToCopy.length} attività su tutti i giorni lavorativi
+                        dal {range?.from && format(range.from, "d MMMM", { locale: it })} al {range?.to && format(range.to, "d MMMM", { locale: it })}.
+                        I giorni con attività esistenti che supererebbero le 8 ore verranno saltati. Vuoi continuare?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => {
+                      setRange(undefined);
+                      setIsConfirmingPaste(false);
+                    }}>Annulla</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmPaste}>Conferma</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+
       {isSameDay(startOfMonth(selectedDate), startOfMonth(today)) && (
           <>
             {missedDaysCurrentMonth.length > 0 ? (
@@ -392,20 +455,21 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                  <Card className={isCopying ? "border-primary ring-2 ring-primary" : ""}>
                     <CardHeader>
                         <CardTitle>Panoramica Calendario</CardTitle>
-                        {isCopying && <CardDescription className="text-primary font-semibold">Modalità Incolla: Seleziona una data di destinazione.</CardDescription>}
+                        {isCopying && <CardDescription className="text-primary font-semibold">Modalità Incolla: Seleziona una data o un intervallo (con SHIFT).</CardDescription>}
                     </CardHeader>
                     <CardContent className="flex justify-center">
                         <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={handleSelectDate}
-                            month={calendarMonth}
-                            onMonthChange={setCalendarMonth}
-                            modifiers={calendarModifiers}
-                            modifiersStyles={calendarModifiersStyles}
-                            className="rounded-md border"
-                            locale={it}
-                            weekStartsOn={1}
+                           mode="multiple"
+                           min={0}
+                           selected={isCopying ? (range ? [range.from, range.to] : []) : [selectedDate]}
+                           onDayClick={handleDayClick}
+                           month={calendarMonth}
+                           onMonthChange={setCalendarMonth}
+                           modifiers={calendarModifiers}
+                           modifiersStyles={calendarModifiersStyles}
+                           className="rounded-md border"
+                           locale={it}
+                           weekStartsOn={1}
                         />
                     </CardContent>
                 </Card>
