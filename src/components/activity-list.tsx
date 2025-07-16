@@ -52,8 +52,8 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Today's Activities</CardTitle>
-          <CardDescription>A log of all tasks recorded today.</CardDescription>
+          <CardTitle>Activities</CardTitle>
+          <CardDescription>A log of all tasks recorded for the selected day.</CardDescription>
         </div>
         {tasks.length > 0 && (
           <AlertDialog>
@@ -67,7 +67,7 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete all of today's logged activities.
+                  This action cannot be undone. This will permanently delete all activities for the selected day.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -119,7 +119,7 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    No activities logged for today.
+                    No activities logged for the selected day.
                   </TableCell>
                 </TableRow>
               )}

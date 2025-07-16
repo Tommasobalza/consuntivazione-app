@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Task } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
@@ -9,15 +9,21 @@ import { SummaryCards } from '@/components/summary-cards';
 import { CategoryDistributionChart } from '@/components/charts/category-distribution-chart';
 import { InsightsReport } from '@/components/insights-report';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
+import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay } from 'date-fns';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CalendarWarning } from 'lucide-react';
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const handleAddTask = (task: Omit<Task, 'id' | 'timestamp'>) => {
     const newTask: Task = {
       ...task,
       id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
+      timestamp: selectedDate.toISOString(),
     };
     setTasks(prevTasks => [...prevTasks, newTask]);
   };
@@ -27,42 +33,123 @@ export function Dashboard() {
   };
   
   const handleClearTasks = () => {
-    setTasks([]);
+    setTasks(prevTasks => prevTasks.filter(task => !isSameDay(new Date(task.timestamp), selectedDate)));
   };
 
-  const todayTasks = tasks.filter(task => {
-    const taskDate = new Date(task.timestamp).toDateString();
-    const today = new Date().toDateString();
-    return taskDate === today;
-  });
+  const tasksForSelectedDate = useMemo(() => {
+    return tasks.filter(task => {
+      const taskDate = new Date(task.timestamp);
+      return isSameDay(taskDate, selectedDate);
+    });
+  }, [tasks, selectedDate]);
+
+  const today = startOfDay(new Date());
+  const startOfCurrentMonth = startOfMonth(today);
+  const daysInMonth = eachDayOfInterval({ start: startOfCurrentMonth, end: today });
+
+  const missedDays = useMemo(() => {
+    const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
+    return daysInMonth.filter(day => isBefore(day, today) && !loggedDays.has(day.toDateString()));
+  }, [tasks, daysInMonth, today]);
+
+  const loggedDaysModifiers = {
+    logged: tasks.map(task => new Date(task.timestamp))
+  };
+
+  const loggedDaysModifiersStyles = {
+    logged: {
+      fontWeight: 'bold',
+      textDecoration: 'underline',
+      color: 'hsl(var(--primary))'
+    }
+  };
 
   return (
-    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-white">
-          Work Insights
-        </h1>
+    <Tabs defaultValue="today" className="space-y-4" onValueChange={(value) => {
+      if (value === "today") {
+        setSelectedDate(new Date());
+      }
+    }}>
+      <div className='flex justify-between items-start'>
+        <TabsList>
+          <TabsTrigger value="today">Today</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+        </TabsList>
+        <div className="text-right">
+          <p className="text-lg font-semibold">{format(selectedDate, "EEEE, MMMM do")}</p>
+          <p className="text-sm text-muted-foreground">
+            {isSameDay(selectedDate, new Date()) ? "Viewing Today's Tasks" : `Viewing Tasks for ${format(selectedDate, "MMMM do")}`}
+          </p>
+        </div>
       </div>
-      <div className="space-y-4">
-        <SummaryCards tasks={todayTasks} />
+
+      {missedDays.length > 0 && isSameDay(selectedDate, today) && (
+        <Alert variant="destructive">
+          <CalendarWarning className="h-4 w-4" />
+          <AlertTitle>You have unlogged days!</AlertTitle>
+          <AlertDescription>
+            You have {missedDays.length} past day(s) this month without any logged activities. Go to the Calendar tab to fill them in.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <TabsContent value="today" className="space-y-4">
+         <div className="space-y-4">
+          <SummaryCards tasks={tasksForSelectedDate} />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <div className="lg:col-span-4 grid gap-4 auto-rows-max">
+              <ActivityLogger onAddTask={handleAddTask} />
+              <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
+            </div>
+            <div className="lg:col-span-3 grid gap-4 auto-rows-max">
+               <Card>
+                  <CardHeader>
+                      <CardTitle>Time Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <CategoryDistributionChart tasks={tasksForSelectedDate} />
+                  </CardContent>
+              </Card>
+              <InsightsReport tasks={tasksForSelectedDate} />
+            </div>
+          </div>
+        </div>
+      </TabsContent>
+      <TabsContent value="calendar" className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <div className="lg:col-span-4 grid gap-4 auto-rows-max">
             <ActivityLogger onAddTask={handleAddTask} />
-            <ActivityList tasks={todayTasks} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
+            <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
           </div>
           <div className="lg:col-span-3 grid gap-4 auto-rows-max">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Time Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <CategoryDistributionChart tasks={todayTasks} />
-                </CardContent>
+            <Card>
+              <CardHeader>
+                <CardTitle>Select a Day</CardTitle>
+              </CardHeader>
+              <CardContent className="flex justify-center">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  modifiers={loggedDaysModifiers}
+                  modifiersStyles={loggedDaysModifiersStyles}
+                  className="rounded-md border"
+                  disabled={(date) => date > new Date() || date < addDays(new Date(), -365)}
+                />
+              </CardContent>
             </Card>
-            <InsightsReport tasks={todayTasks} />
+            <Card>
+              <CardHeader>
+                  <CardTitle>Time Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <CategoryDistributionChart tasks={tasksForSelectedDate} />
+              </CardContent>
+            </Card>
+            <InsightsReport tasks={tasksForSelectedDate} />
           </div>
         </div>
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }
