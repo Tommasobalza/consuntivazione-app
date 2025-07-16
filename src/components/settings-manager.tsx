@@ -176,12 +176,11 @@ export function SettingsManager({
                   <Switch
                       checked={saveSettings.autoSave}
                       onCheckedChange={handleAutoSaveChange}
-                      disabled={saveSettings.autoSave}
                   />
               </div>
               {saveSettings.autoSave ? (
                    <p className="text-sm text-muted-foreground">
-                      Il salvataggio automatico è attivo. Questa impostazione non può essere modificata.
+                      Il salvataggio automatico è attivo. Le modifiche vengono salvate in tempo reale.
                    </p>
               ) : (
                   <p className="text-sm text-muted-foreground">
