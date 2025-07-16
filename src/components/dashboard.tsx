@@ -199,11 +199,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     copying: {
       cursor: 'copy'
     },
-    selected: {
-        backgroundColor: 'hsl(var(--primary) / 0.1)',
-        color: 'hsl(var(--primary-foreground))',
-        borderColor: 'hsl(var(--primary))'
-    },
     missed: {
       color: 'hsl(var(--destructive) / 0.9)',
       fontWeight: 'bold'
