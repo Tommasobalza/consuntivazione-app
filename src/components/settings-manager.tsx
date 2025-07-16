@@ -17,7 +17,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -76,15 +75,15 @@ export function SettingsManager({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback>
-                <CurrentIcon className="h-8 w-8" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-grow">
-               <Form {...profileForm}>
-                <form className="space-y-4">
+          <Form {...profileForm}>
+            <form className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarFallback>
+                    <CurrentIcon className="h-8 w-8" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-grow space-y-4">
                   <FormField
                     control={profileForm.control}
                     name="name"
@@ -109,36 +108,37 @@ export function SettingsManager({
                       </FormItem>
                     )}
                   />
-                </form>
-              </Form>
-            </div>
-          </div>
-            <FormField
-              control={profileForm.control}
-              name="icon"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Seleziona Icona</FormLabel>
-                  <FormControl>
-                      <div className="flex flex-wrap gap-2 pt-2">
-                      {Object.keys(userIcons).map((iconKey) => {
-                        const IconComponent = userIcons[iconKey as keyof typeof userIcons];
-                        return (
-                            <button
-                            type="button"
-                            key={iconKey}
-                            onClick={() => field.onChange(iconKey)}
-                            className={`p-2 rounded-md border-2 ${field.value === iconKey ? 'border-primary' : 'border-border'}`}
-                            >
-                            <IconComponent className="h-5 w-5" />
-                            </button>
-                        );
-                      })}
-                      </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                </div>
+              </div>
+              
+              <FormField
+                control={profileForm.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Seleziona Icona</FormLabel>
+                    <FormControl>
+                        <div className="flex flex-wrap gap-2 pt-2">
+                        {Object.keys(userIcons).map((iconKey) => {
+                          const IconComponent = userIcons[iconKey as keyof typeof userIcons];
+                          return (
+                              <button
+                              type="button"
+                              key={iconKey}
+                              onClick={() => field.onChange(iconKey)}
+                              className={`p-2 rounded-md border-2 ${field.value === iconKey ? 'border-primary' : 'border-border'}`}
+                              >
+                              <IconComponent className="h-5 w-5" />
+                              </button>
+                          );
+                        })}
+                        </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </CardContent>
       </Card>
       
