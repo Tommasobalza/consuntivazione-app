@@ -45,7 +45,11 @@ export function Dashboard() {
 
   const today = startOfDay(new Date());
   const startOfCurrentMonth = startOfMonth(today);
-  const daysInMonth = eachDayOfInterval({ start: startOfCurrentMonth, end: today });
+  
+  const daysInMonth = useMemo(() => 
+    eachDayOfInterval({ start: startOfCurrentMonth, end: today }), 
+    [startOfCurrentMonth, today]
+  );
 
   const missedDays = useMemo(() => {
     const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
@@ -64,31 +68,33 @@ export function Dashboard() {
     }
   };
 
+  const handleDateChange = (value: string) => {
+    if (value === "today") {
+      setSelectedDate(new Date());
+    }
+  };
+
   return (
     <div className="space-y-4">
       {missedDays.length > 0 && isSameDay(selectedDate, today) && (
         <Alert variant="destructive" className="mt-4">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>You have unlogged days!</AlertTitle>
+          <AlertTitle>Hai dei giorni non registrati!</AlertTitle>
           <AlertDescription>
-            You have {missedDays.length} past day(s) this month without any logged activities. Go to the Calendar tab to fill them in.
+            Hai {missedDays.length} giorno/i passato/i in questo mese senza attività registrate. Vai alla scheda Calendario per compilare i dati mancanti.
           </AlertDescription>
         </Alert>
       )}
-      <Tabs defaultValue="today" className="space-y-4" onValueChange={(value) => {
-        if (value === "today") {
-          setSelectedDate(new Date());
-        }
-      }}>
+      <Tabs defaultValue="today" className="space-y-4" onValueChange={handleDateChange}>
         <div className='flex justify-between items-start'>
           <TabsList>
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="today">Oggi</TabsTrigger>
+            <TabsTrigger value="calendar">Calendario</TabsTrigger>
           </TabsList>
           <div className="text-right">
-            <p className="text-lg font-semibold">{format(selectedDate, "EEEE, MMMM do")}</p>
+            <p className="text-lg font-semibold">{format(selectedDate, "EEEE, d MMMM")}</p>
             <p className="text-sm text-muted-foreground">
-              {isSameDay(selectedDate, new Date()) ? "Viewing Today's Tasks" : `Viewing Tasks for ${format(selectedDate, "MMMM do")}`}
+              {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM")}`}
             </p>
           </div>
         </div>
@@ -104,7 +110,7 @@ export function Dashboard() {
               <div className="lg:col-span-3 grid gap-4 auto-rows-max">
                  <Card>
                     <CardHeader>
-                        <CardTitle>Time Distribution</CardTitle>
+                        <CardTitle>Distribuzione del Tempo</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <CategoryDistributionChart tasks={tasksForSelectedDate} />
@@ -124,7 +130,7 @@ export function Dashboard() {
             <div className="lg:col-span-3 grid gap-4 auto-rows-max">
               <Card>
                 <CardHeader>
-                  <CardTitle>Select a Day</CardTitle>
+                  <CardTitle>Seleziona un Giorno</CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center">
                   <Calendar
@@ -140,8 +146,8 @@ export function Dashboard() {
               </Card>
               <Card>
                 <CardHeader>
-                    <CardTitle>Time Distribution</CardTitle>
-                </Header>
+                    <CardTitle>Distribuzione del Tempo</CardTitle>
+                </CardHeader>
                 <CardContent>
                     <CategoryDistributionChart tasks={tasksForSelectedDate} />
                 </CardContent>
