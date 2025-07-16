@@ -556,5 +556,3 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     </div>
   );
 }
-
-    

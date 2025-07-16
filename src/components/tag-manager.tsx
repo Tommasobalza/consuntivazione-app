@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react";
@@ -216,5 +217,5 @@ export function TagManager({ tags, setTags }: TagManagerProps) {
         </ScrollArea>
       </CardContent>
     </Card>
-  );
+  )
 }
