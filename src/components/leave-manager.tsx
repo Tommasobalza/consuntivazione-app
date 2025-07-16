@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -139,7 +140,7 @@ export function LeaveManager({ leaveDays, setLeaveDays }: LeaveManagerProps) {
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
-                                disabled={(date) => date > new Date() || date < new Date("2020-01-01")}
+                                disabled={(date) => date < new Date("2020-01-01")}
                                 initialFocus
                                 locale={it}
                             />
@@ -204,3 +205,5 @@ export function LeaveManager({ leaveDays, setLeaveDays }: LeaveManagerProps) {
     </Card>
   )
 }
+
+    

@@ -249,11 +249,11 @@ export function Dashboard() {
           </TabsList>
            <div className="text-right">
               <div className="flex items-center justify-end gap-2">
-                <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)} disabled={isBefore(selectedDate, addDays(today, -365))}>
+                <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)}>
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
                 <p className="text-lg font-semibold min-w-[220px] text-center">{isSameDay(selectedDate, today) ? "Oggi" : format(selectedDate, "EEEE, d MMMM", { locale: it })}</p>
-                 <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)} disabled={isSameDay(selectedDate, today) || isBefore(today, selectedDate)}>
+                 <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)}>
                     <ChevronRight className="h-5 w-5" />
                 </Button>
               </div>
@@ -303,7 +303,6 @@ export function Dashboard() {
                             modifiers={calendarModifiers}
                             modifiersStyles={calendarModifiersStyles}
                             className="rounded-md border"
-                            disabled={(date) => date > new Date() || date < addDays(new Date(), -365)}
                             locale={it}
                             weekStartsOn={1}
                         />
@@ -359,3 +358,5 @@ export function Dashboard() {
     </div>
   );
 }
+
+    
