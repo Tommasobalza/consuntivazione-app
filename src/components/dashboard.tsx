@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Task, Tag, TaskCategory, TaskLocation, TaskDuration } from '@/lib/types';
+import type { Task, Tag, TaskCategory, TaskLocation } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -45,7 +45,7 @@ export function Dashboard() {
       }));
   }, [tasks, selectedDate, tags]);
 
-  const handleAddTask = (task: Omit<Task, 'id' | 'timestamp'>) => {
+  const handleAddTask = (task: Omit<Task, 'id' | 'timestamp' | 'tag'>) => {
     const totalDurationForDay = tasksForSelectedDate.reduce((acc, curr) => acc + curr.duration, 0);
     const maxDuration = 480; // 8 hours in minutes
 

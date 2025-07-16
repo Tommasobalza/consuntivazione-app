@@ -38,7 +38,7 @@ const formSchema = z.object({
 type ActivityLoggerFormValues = z.infer<typeof formSchema>;
 
 interface ActivityLoggerProps {
-  onAddTask: (task: Omit<Task, "id" | "timestamp">) => void
+  onAddTask: (task: Omit<Task, "id" | "timestamp" | "tag">) => void
   tags: Tag[]
   setTags: React.Dispatch<React.SetStateAction<Tag[]>>
 }
