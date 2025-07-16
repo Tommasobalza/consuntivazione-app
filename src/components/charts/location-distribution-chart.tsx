@@ -2,8 +2,8 @@
 
 import { useMemo } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
-import type { Task } from "@/lib/types"
-import { locationConfig } from "@/lib/types"
+import type { Task, TaskLocation } from "@/lib/types"
+import { locationConfig, taskLocations } from "@/lib/types"
 import {
   ChartContainer,
   ChartTooltipContent,
@@ -25,6 +25,12 @@ const formatMinutes = (minutes: number) => {
     return `${mins}m`;
 }
 
+const locationColors: { [key in TaskLocation]: string } = {
+  'Smart Working': 'hsl(var(--chart-2))',
+  'Sede': 'hsl(var(--chart-1))',
+  'External': 'hsl(var(--chart-3))',
+};
+
 export function LocationDistributionChart({ tasks }: LocationDistributionChartProps) {
   const chartData = useMemo(() => {
     const locationMap = new Map<string, number>()
@@ -35,16 +41,16 @@ export function LocationDistributionChart({ tasks }: LocationDistributionChartPr
       )
     });
     
-    const data = Array.from(Object.keys(locationConfig)).map(location => ({
+    const data = taskLocations.map(location => ({
         name: location,
         value: locationMap.get(location) || 0,
-        fill: location === 'Sede' ? 'hsl(var(--chart-1))' : 'hsl(var(--chart-2))',
+        fill: locationColors[location],
     }));
 
-    return data;
+    return data.filter(d => d.value > 0);
   }, [tasks])
 
-  if (tasks.length === 0) {
+  if (tasks.length === 0 || chartData.length === 0) {
     return (
       <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground">
         Nessun dato per i filtri selezionati.

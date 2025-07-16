@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Briefcase, Code, GraduationCap, Grip, Laptop, Building, User, Bot, Shell, Smile, Star, HardHat, CodeXml, TerminalSquare, GitBranch, Database, Cpu, Server, UserCheck, UserCog, UserCircle } from 'lucide-react';
+import { Briefcase, Code, GraduationCap, Grip, Laptop, Building, User, Bot, Shell, Smile, Star, HardHat, CodeXml, TerminalSquare, GitBranch, Database, Cpu, Server, UserCheck, UserCog, UserCircle, Globe } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
 
 export const taskCategories = ["Sviluppo", "Riunione", "Formazione", "Altro"] as const;
@@ -8,7 +8,7 @@ export type TaskCategory = (typeof taskCategories)[number];
 export const taskDurations = [480, 240, 60, 30] as const;
 export type TaskDuration = (typeof taskDurations)[number];
 
-export const taskLocations = ["Smart Working", "Sede"] as const;
+export const taskLocations = ["Smart Working", "Sede", "External"] as const;
 export type TaskLocation = (typeof taskLocations)[number];
 
 export interface Tag {
@@ -62,6 +62,7 @@ export const userIcons: Record<string, LucideIcon> = {
     Shell,
     Star,
     HardHat,
+    Code,
     CodeXml,
     TerminalSquare,
     GitBranch,
@@ -80,6 +81,7 @@ export const categoryConfig: Record<TaskCategory, { icon: LucideIcon; color: str
 export const locationConfig: Record<TaskLocation, { icon: LucideIcon }> = {
   'Smart Working': { icon: Laptop },
   'Sede': { icon: Building },
+  'External': { icon: Globe },
 };
 
 export const tailwindColors = [
