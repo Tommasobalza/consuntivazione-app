@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { Briefcase, Code, GraduationCap, Grip, Laptop, Building } from 'lucide-react';
+import { Briefcase, Code, GraduationCap, Grip, Laptop, Building, User, Bot, Shell, Smile, Star } from 'lucide-react';
 
 export const taskCategories = ["Sviluppo", "Riunione", "Formazione", "Altro"] as const;
 export type TaskCategory = (typeof taskCategories)[number];
@@ -40,13 +40,20 @@ export interface LeaveDay {
 export interface UserProfile {
     name: string;
     role: string;
-    // avatarUrl?: string; // Future use
+    icon: string;
 }
 
 export interface SaveSettings {
     autoSave: boolean;
 }
 
+export const userIcons: Record<string, LucideIcon> = {
+    User,
+    Bot,
+    Shell,
+    Smile,
+    Star,
+};
 
 export const categoryConfig: Record<TaskCategory, { icon: LucideIcon; color: string }> = {
   Sviluppo: { icon: Code, color: 'hsl(var(--chart-1))' },

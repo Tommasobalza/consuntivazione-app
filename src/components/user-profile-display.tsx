@@ -1,19 +1,22 @@
 
 "use client";
 
-import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { UserProfile } from "@/lib/types";
+import { userIcons } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User } from "lucide-react";
 
-export function UserProfileDisplay() {
-  const [userProfile] = useLocalStorage<UserProfile>('user-profile', { name: 'Utente', role: 'Membro del Team' });
+interface UserProfileDisplayProps {
+  userProfile: UserProfile;
+}
+
+export function UserProfileDisplay({ userProfile }: UserProfileDisplayProps) {
+  const Icon = userIcons[userProfile.icon as keyof typeof userIcons] || userIcons.User;
 
   return (
     <div className="flex items-center gap-3">
       <Avatar>
         <AvatarFallback>
-          <User className="h-5 w-5" />
+          <Icon className="h-5 w-5" />
         </AvatarFallback>
       </Avatar>
       <div className="text-right">

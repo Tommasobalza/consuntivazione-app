@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { SaveSettings, UserProfile } from "@/lib/types";
+import { userIcons } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -24,11 +25,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Il nome deve avere almeno 2 caratteri.").max(50),
   role: z.string().min(2, "Il ruolo deve avere almeno 2 caratteri.").max(50),
+  icon: z.string(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -60,8 +62,9 @@ export function SettingsManager({
   
   const handleAutoSaveChange = (checked: boolean) => {
     setSaveSettings({ autoSave: checked });
-    // This change will be picked up by the dashboard to trigger a save if autoSave is re-enabled
   };
+  
+  const CurrentIcon = userIcons[userProfile.icon as keyof typeof userIcons] || userIcons.User;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -69,14 +72,14 @@ export function SettingsManager({
         <CardHeader>
           <CardTitle>Profilo Utente</CardTitle>
           <CardDescription>
-            Personalizza le tue informazioni. Saranno visualizzate nell'intestazione.
+            Personalizza le tue informazioni e il tuo avatar.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-6">
             <Avatar className="h-16 w-16">
               <AvatarFallback>
-                <User className="h-8 w-8" />
+                <CurrentIcon className="h-8 w-8" />
               </AvatarFallback>
             </Avatar>
             <div className="flex-grow">
@@ -110,39 +113,79 @@ export function SettingsManager({
               </Form>
             </div>
           </div>
+            <FormField
+              control={profileForm.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Seleziona Icona</FormLabel>
+                  <FormControl>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                      {Object.keys(userIcons).map((iconKey) => {
+                        const IconComponent = userIcons[iconKey as keyof typeof userIcons];
+                        return (
+                            <button
+                            type="button"
+                            key={iconKey}
+                            onClick={() => field.onChange(iconKey)}
+                            className={`p-2 rounded-md border-2 ${field.value === iconKey ? 'border-primary' : 'border-border'}`}
+                            >
+                            <IconComponent className="h-5 w-5" />
+                            </button>
+                        );
+                      })}
+                      </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Impostazioni di Salvataggio</CardTitle>
-          <CardDescription>
-            Scegli come salvare le tue modifiche.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-           <div className="flex items-center space-x-4 rounded-md border p-4">
-              <div className="flex-1 space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  Salvataggio Automatico
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Salva automaticamente le modifiche mentre lavori.
-                </p>
-              </div>
-              <Switch
-                checked={saveSettings.autoSave}
-                onCheckedChange={handleAutoSaveChange}
-                aria-readonly
-              />
-            </div>
-            {!saveSettings.autoSave && (
-                <p className="text-sm text-muted-foreground mt-4">
-                    Sei in modalità di salvataggio manuale. Ricorda di cliccare su "Salva Modifiche" per non perdere il tuo lavoro.
-                </p>
-            )}
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+            <CardHeader>
+            <CardTitle>Tema Applicazione</CardTitle>
+            <CardDescription>
+                Scegli tra tema chiaro, scuro o di sistema.
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ThemeToggle />
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+            <CardTitle>Impostazioni di Salvataggio</CardTitle>
+            <CardDescription>
+                Scegli come salvare le tue modifiche.
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+            <div className="flex items-center space-x-4 rounded-md border p-4">
+                <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                    Salvataggio Automatico
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                    Salva automaticamente le modifiche.
+                    </p>
+                </div>
+                <Switch
+                    checked={saveSettings.autoSave}
+                    onCheckedChange={handleAutoSaveChange}
+                    aria-readonly
+                />
+                </div>
+                {!saveSettings.autoSave && (
+                    <p className="text-sm text-muted-foreground mt-4">
+                        Sei in modalità di salvataggio manuale. Ricorda di cliccare su "Salva Modifiche".
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

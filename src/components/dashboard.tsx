@@ -25,15 +25,20 @@ import { useToast } from "@/hooks/use-toast";
 import { LeaveManager } from './leave-manager';
 import { CopyTasksCard } from './copy-tasks-card';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { SettingsManager } from './settings-manager';
 
-export function Dashboard() {
+interface DashboardProps {
+  userProfile: UserProfile;
+  setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
+  saveSettings: SaveSettings;
+  setSaveSettings: React.Dispatch<React.SetStateAction<SaveSettings>>;
+}
+
+export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings }: DashboardProps) {
   const [tasks, setTasks, saveTasks] = useLocalStorage<Task[]>('daily-tasks', []);
   const [tags, setTags, saveTags] = useLocalStorage<Tag[]>('activity-tags', []);
   const [leaveDays, setLeaveDays, saveLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', []);
-  const [userProfile, setUserProfile, saveUserProfile] = useLocalStorage<UserProfile>('user-profile', { name: 'Utente', role: 'Membro del Team' });
-  const [saveSettings, setSaveSettings, saveSettingsConfig] = useLocalStorage<SaveSettings>('save-settings', { autoSave: true });
-
+  // User profile and save settings are now managed in the parent Home component
+  
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -60,8 +65,8 @@ export function Dashboard() {
     saveTasks();
     saveTags();
     saveLeaveDays();
-    saveUserProfile();
-    saveSettingsConfig();
+    // saveUserProfile(); is handled by parent now
+    // saveSettingsConfig(); is handled by parent now
     setHasPendingChanges(false);
     toast({
       title: "Modifiche salvate",
@@ -296,7 +301,6 @@ export function Dashboard() {
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
             <TabsTrigger value="leave">Out Of Office</TabsTrigger>
-            <TabsTrigger value="settings">Impostazioni</TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-4">
             {!saveSettings.autoSave && hasPendingChanges && (
@@ -435,17 +439,7 @@ export function Dashboard() {
         <TabsContent value="leave" className="space-y-4">
           <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} />
         </TabsContent>
-        <TabsContent value="settings" className="space-y-4">
-          <SettingsManager 
-            userProfile={userProfile}
-            setUserProfile={setUserProfile}
-            saveSettings={saveSettings}
-            setSaveSettings={setSaveSettings}
-          />
-        </TabsContent>
       </Tabs>
     </div>
   );
 }
-
-    
