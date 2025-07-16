@@ -163,26 +163,32 @@ export function SettingsManager({
             </CardDescription>
             </CardHeader>
             <CardContent>
-            <div className="flex items-center space-x-4 rounded-md border p-4">
-                <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                    Salvataggio Automatico
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                    Salva automaticamente le modifiche in background.
-                    </p>
-                </div>
-                <Switch
-                    checked={saveSettings.autoSave}
-                    onCheckedChange={handleAutoSaveChange}
-                    aria-readonly
-                />
-                </div>
-                {!saveSettings.autoSave && (
-                    <p className="text-sm text-muted-foreground mt-4">
-                        Sei in modalità di salvataggio manuale. Ricorda di cliccare su "Salva Modifiche" per non perdere il tuo lavoro.
-                    </p>
-                )}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center space-x-4 rounded-md border p-4">
+                  <div className="flex-1 space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                      Salvataggio Automatico
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                      Salva automaticamente le modifiche in background.
+                      </p>
+                  </div>
+                  <Switch
+                      checked={saveSettings.autoSave}
+                      onCheckedChange={handleAutoSaveChange}
+                      disabled={saveSettings.autoSave}
+                  />
+              </div>
+              {saveSettings.autoSave ? (
+                   <p className="text-sm text-muted-foreground">
+                      Il salvataggio automatico è attivo. Questa impostazione non può essere modificata.
+                   </p>
+              ) : (
+                  <p className="text-sm text-muted-foreground">
+                      Sei in modalità di salvataggio manuale. Ricorda di cliccare su "Salva Modifiche" per non perdere il tuo lavoro.
+                  </p>
+              )}
+            </div>
             </CardContent>
         </Card>
       </div>
