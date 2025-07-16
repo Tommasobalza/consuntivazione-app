@@ -318,10 +318,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
 
   const handleTabChange = (value: string) => {
-    if (value === "home") {
-        setSelectedDate(new Date());
-        setCalendarMonth(startOfMonth(new Date()));
-    }
     if (value === "calendar") {
         setCalendarMonth(startOfMonth(selectedDate));
     }
