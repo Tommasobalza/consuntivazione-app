@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CalendarWarning } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
@@ -85,7 +85,7 @@ export function Dashboard() {
 
       {missedDays.length > 0 && isSameDay(selectedDate, today) && (
         <Alert variant="destructive">
-          <CalendarWarning className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>You have unlogged days!</AlertTitle>
           <AlertDescription>
             You have {missedDays.length} past day(s) this month without any logged activities. Go to the Calendar tab to fill them in.
@@ -141,7 +141,7 @@ export function Dashboard() {
             <Card>
               <CardHeader>
                   <CardTitle>Time Distribution</CardTitle>
-              </CardHeader>
+              </Header>
               <CardContent>
                   <CategoryDistributionChart tasks={tasksForSelectedDate} />
               </CardContent>
