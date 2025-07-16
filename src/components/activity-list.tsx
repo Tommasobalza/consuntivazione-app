@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Trash2, XCircle } from "lucide-react"
+import { Trash2, XCircle, Pencil } from "lucide-react"
 import { Badge } from "./ui/badge"
 import {
   AlertDialog,
@@ -55,31 +55,30 @@ const formatDuration = (minutes: number) => {
 }
 
 export function ActivityList({ tasks, onDeleteTask, onClearTasks, isEditable = false, onUpdateTask }: ActivityListProps) {
-  const [editingDescriptions, setEditingDescriptions] = useState<Record<string, string>>({});
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
 
-  const handleDescriptionChange = (taskId: string, value: string) => {
-    setEditingDescriptions(prev => ({ ...prev, [taskId]: value }));
+  const handleEditClick = (task: Task) => {
+    setEditingTaskId(task.id);
+    setEditingValue(task.description || "");
   };
 
-  const handleDescriptionBlur = (taskId: string) => {
-    if (onUpdateTask && typeof editingDescriptions[taskId] === 'string') {
-      onUpdateTask(taskId, { description: editingDescriptions[taskId] });
-      // Clear the value from local state after saving to avoid holding stale data
-      const newEditingDescriptions = { ...editingDescriptions };
-      delete newEditingDescriptions[taskId];
-      setEditingDescriptions(newEditingDescriptions);
+  const handleSave = () => {
+    if (onUpdateTask && editingTaskId) {
+      onUpdateTask(editingTaskId, { description: editingValue });
     }
+    setEditingTaskId(null);
+    setEditingValue("");
   };
 
-  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, taskId: string) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleDescriptionBlur(taskId);
+      handleSave();
       e.currentTarget.blur();
     }
     if (e.key === 'Escape') {
-      const newEditingDescriptions = { ...editingDescriptions };
-      delete newEditingDescriptions[taskId];
-      setEditingDescriptions(newEditingDescriptions);
+      setEditingTaskId(null);
+      setEditingValue("");
       e.currentTarget.blur();
     }
   };
@@ -136,8 +135,7 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks, isEditable = f
                 tasks.map((task) => {
                   const CategoryIcon = categoryConfig[task.category].icon;
                   const LocationIcon = locationConfig[task.location].icon;
-                  const currentDescription = editingDescriptions[task.id] ?? task.description ?? "";
-
+                  
                   return (
                     <TableRow key={task.id}>
                       <TableCell>
@@ -146,15 +144,29 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks, isEditable = f
                           <div className="w-full">
                             <p className="font-medium">{task.name}</p>
                             {isEditable ? (
-                               <Input
-                                  type="text"
-                                  placeholder="Aggiungi una descrizione..."
-                                  value={currentDescription}
-                                  onChange={(e) => handleDescriptionChange(task.id, e.target.value)}
-                                  onBlur={() => handleDescriptionBlur(task.id)}
-                                  onKeyDown={(e) => handleDescriptionKeyDown(e, task.id)}
-                                  className="h-8 text-sm text-muted-foreground"
-                                />
+                                <div className="flex items-center gap-2 group">
+                                  {editingTaskId === task.id ? (
+                                    <Input
+                                      type="text"
+                                      placeholder="Aggiungi una descrizione..."
+                                      value={editingValue}
+                                      onChange={(e) => setEditingValue(e.target.value)}
+                                      onBlur={handleSave}
+                                      onKeyDown={handleKeyDown}
+                                      className="h-8 text-sm text-muted-foreground"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <>
+                                      <p className="text-sm text-muted-foreground flex-grow h-8 flex items-center">
+                                        {task.description || <span className="text-muted-foreground/70">Aggiungi una descrizione...</span>}
+                                      </p>
+                                      <Button variant="ghost" size="icon" onClick={() => handleEditClick(task)} className="h-7 w-7 opacity-0 group-hover:opacity-100">
+                                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                             ) : (
                                task.description && <p className="text-sm text-muted-foreground">{task.description}</p>
                             )}
