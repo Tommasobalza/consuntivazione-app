@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay, UserProfile, SaveSettings } from '@/lib/types';
+import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay, UserProfile, SaveSettings, DateRange } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -13,7 +13,7 @@ import { InsightsReport } from '@/components/insights-report';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isWeekend } from 'date-fns';
+import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isWeekend, isWithinInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Save, X, Copy, Settings } from 'lucide-react';
@@ -45,11 +45,15 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
   
+  // State for global filters
+  const [dateFilterMode, setDateFilterMode] = useState<'month' | 'range'>('month');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "all">("all");
   const [selectedLocation, setSelectedLocation] = useState<TaskLocation | "all">("all");
   const [selectedActivityName, setSelectedActivityName] = useState<string>("all");
+  
   const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(new Date()));
 
   const [isCopying, setIsCopying] = useState(false);
@@ -117,13 +121,22 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const filteredTasksForStats = useMemo(() => {
     return tasks.filter(task => {
       const taskDate = new Date(task.timestamp);
-      const isMonthMatch = getMonth(taskDate) === selectedMonth && getYear(taskDate) === selectedYear;
+
+      let isDateMatch = false;
+      if (dateFilterMode === 'month') {
+        isDateMatch = getMonth(taskDate) === selectedMonth && getYear(taskDate) === selectedYear;
+      } else if (dateRange?.from) {
+        const to = dateRange.to || dateRange.from;
+        isDateMatch = isWithinInterval(taskDate, { start: startOfDay(dateRange.from), end: startOfDay(to) });
+      }
+
       const isCategoryMatch = selectedCategory === 'all' || task.category === selectedCategory;
       const isLocationMatch = selectedLocation === 'all' || task.location === selectedLocation;
       const isActivityNameMatch = selectedActivityName === 'all' || (task.name && task.name.toLowerCase() === selectedActivityName.toLowerCase());
-      return isMonthMatch && isCategoryMatch && isLocationMatch && isActivityNameMatch;
+      
+      return isDateMatch && isCategoryMatch && isLocationMatch && isActivityNameMatch;
     });
-  }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation, selectedActivityName]);
+  }, [tasks, dateFilterMode, selectedMonth, selectedYear, dateRange, selectedCategory, selectedLocation, selectedActivityName]);
 
   const today = startOfDay(new Date());
 
@@ -493,10 +506,14 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
          <TabsContent value="stats" className="space-y-4">
           <GlobalFilters
             tasks={tasks}
+            dateFilterMode={dateFilterMode}
+            setDateFilterMode={setDateFilterMode}
             selectedMonth={selectedMonth}
             setSelectedMonth={setSelectedMonth}
             selectedYear={selectedYear}
             setSelectedYear={setSelectedYear}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             selectedLocation={selectedLocation}
@@ -539,3 +556,5 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     </div>
   );
 }
+
+    
