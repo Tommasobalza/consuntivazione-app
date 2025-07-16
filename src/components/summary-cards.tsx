@@ -1,12 +1,14 @@
+
 "use client"
 
 import type { Task } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock, ListChecks, BrainCircuit } from "lucide-react"
+import { Clock, ListChecks, BrainCircuit, CalendarOff } from "lucide-react"
 import { useMemo } from "react"
 
 interface SummaryCardsProps {
   tasks: Task[]
+  isLeaveDay: boolean;
 }
 
 const formatTotalDuration = (totalMinutes: number) => {
@@ -15,13 +17,28 @@ const formatTotalDuration = (totalMinutes: number) => {
   return `${hours}h ${minutes}m`
 }
 
-export function SummaryCards({ tasks }: SummaryCardsProps) {
+export function SummaryCards({ tasks, isLeaveDay }: SummaryCardsProps) {
   const { totalDuration, taskCount, uniqueCategories } = useMemo(() => {
     const totalDuration = tasks.reduce((sum, task) => sum + task.duration, 0)
     const taskCount = tasks.length
     const uniqueCategories = new Set(tasks.map(task => task.category)).size
     return { totalDuration, taskCount, uniqueCategories }
   }, [tasks])
+
+  if (isLeaveDay) {
+    return (
+       <Card className="md:col-span-3">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Giorno di Assenza</CardTitle>
+          <CalendarOff className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">Assente</div>
+          <p className="text-xs text-muted-foreground">Nessuna attività registrata per questo giorno.</p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-3">

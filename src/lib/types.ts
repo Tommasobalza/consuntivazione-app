@@ -28,6 +28,14 @@ export interface Task {
   tag?: Tag;
 }
 
+export const leaveTypes = ["Ferie", "Malattia", "Festività"] as const;
+export type LeaveType = (typeof leaveTypes)[number];
+
+export interface LeaveDay {
+  date: string; // ISO string for the day
+  type: LeaveType;
+}
+
 
 export const categoryConfig: Record<TaskCategory, { icon: LucideIcon; color: string }> = {
   Sviluppo: { icon: Code, color: 'hsl(var(--chart-1))' },

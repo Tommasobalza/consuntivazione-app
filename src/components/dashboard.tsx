@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Task, Tag, TaskCategory, TaskLocation } from '@/lib/types';
+import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -22,20 +22,24 @@ import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
 import { Button } from './ui/button';
 import { useToast } from "@/hooks/use-toast";
-
+import { LeaveManager } from './leave-manager';
+import { CopyTasksCard } from './copy-tasks-card';
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
   const [tags, setTags] = useLocalStorage<Tag[]>('activity-tags', []);
+  const [leaveDays, setLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', []);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
   
-  // State for global filters
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "all">("all");
   const [selectedLocation, setSelectedLocation] = useState<TaskLocation | "all">("all");
   const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(new Date()));
+
+  const [isCopying, setIsCopying] = useState(false);
+  const [tasksToCopy, setTasksToCopy] = useState<Omit<Task, 'id' | 'timestamp'>[]>([]);
 
   const tasksForSelectedDate = useMemo(() => {
     return tasks
@@ -45,8 +49,21 @@ export function Dashboard() {
         tag: task.tagId ? tags.find(t => t.id === task.tagId) : undefined
       }));
   }, [tasks, selectedDate, tags]);
+  
+  const isLeaveDay = useMemo(() => {
+    return leaveDays.some(d => isSameDay(new Date(d.date), selectedDate));
+  }, [leaveDays, selectedDate]);
 
   const handleAddTask = (task: Omit<Task, 'id' | 'timestamp' | 'tag'>) => {
+    if (isLeaveDay) {
+      toast({
+        title: "Giorno di assenza",
+        description: "Non puoi registrare attività in un giorno di ferie, malattia o festività.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const totalDurationForDay = tasksForSelectedDate.reduce((acc, curr) => acc + curr.duration, 0);
     const maxDuration = 480; // 8 hours in minutes
 
@@ -95,18 +112,32 @@ export function Dashboard() {
 
   const missedDays = useMemo(() => {
     const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
-    return daysInMonth.filter(day => isBefore(day, today) && !loggedDays.has(day.toDateString()));
-  }, [tasks, daysInMonth, today]);
+    const leaveDaysSet = new Set(leaveDays.map(day => startOfDay(new Date(day.date)).toDateString()));
+    
+    return daysInMonth.filter(day => {
+        const dayString = day.toDateString();
+        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+        return isBefore(day, today) && !isWeekend && !loggedDays.has(dayString) && !leaveDaysSet.has(dayString);
+    });
+  }, [tasks, leaveDays, daysInMonth, today]);
 
-  const loggedDaysModifiers = {
-    logged: tasks.map(task => new Date(task.timestamp))
-  };
+  const calendarModifiers = useMemo(() => ({
+    logged: tasks.map(task => new Date(task.timestamp)),
+    leave: leaveDays.map(day => new Date(day.date)),
+    copying: isCopying ? new Date() : undefined, // just to apply style
+  }), [tasks, leaveDays, isCopying]);
 
-  const loggedDaysModifiersStyles = {
+  const calendarModifiersStyles = {
     logged: {
       fontWeight: 'bold',
-      textDecoration: 'underline',
       color: 'hsl(var(--primary))'
+    },
+    leave: {
+      color: 'hsl(var(--destructive))',
+      textDecoration: 'line-through'
+    },
+    copying: {
+      cursor: 'copy'
     }
   };
 
@@ -115,11 +146,78 @@ export function Dashboard() {
   };
   
   const handleSelectDate = (date: Date | undefined) => {
-    if (date) {
-        setSelectedDate(date);
-        setCalendarMonth(startOfMonth(date));
+    if (!date) return;
+
+    if (isCopying) {
+      handlePasteTasks(date);
+    } else {
+      setSelectedDate(date);
+      setCalendarMonth(startOfMonth(date));
     }
   }
+
+  const handleToggleCopyMode = () => {
+    if (isCopying) {
+      setIsCopying(false);
+      setTasksToCopy([]);
+    } else {
+      const tasksOnSelectedDay = tasks.filter(task => isSameDay(new Date(task.timestamp), selectedDate));
+      if (tasksOnSelectedDay.length === 0) {
+        toast({
+          title: "Nessuna attività da copiare",
+          description: "Non ci sono attività registrate nel giorno selezionato.",
+          variant: "destructive"
+        });
+        return;
+      }
+      const tasksToCopyData = tasksOnSelectedDay.map(({ id, timestamp, ...rest }) => rest);
+      setTasksToCopy(tasksToCopyData);
+      setIsCopying(true);
+      toast({
+        title: "Modalità copia attiva",
+        description: "Seleziona una data sul calendario per incollare le attività."
+      });
+    }
+  };
+
+  const handlePasteTasks = (targetDate: Date) => {
+    const isTargetLeaveDay = leaveDays.some(d => isSameDay(new Date(d.date), targetDate));
+    if (isTargetLeaveDay) {
+        toast({
+            title: "Operazione non consentita",
+            description: "Non puoi incollare attività in un giorno di assenza.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    const tasksOnTargetDay = tasks.filter(task => isSameDay(new Date(task.timestamp), targetDate));
+    const durationOnTargetDay = tasksOnTargetDay.reduce((sum, task) => sum + task.duration, 0);
+    const durationToCopy = tasksToCopy.reduce((sum, task) => sum + task.duration, 0);
+
+    if (durationOnTargetDay + durationToCopy > 480) {
+        toast({
+            title: "Limite giornaliero superato",
+            description: "L'aggiunta di queste attività supererebbe il limite di 8 ore.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    const newTasks: Task[] = tasksToCopy.map(task => ({
+        ...task,
+        id: crypto.randomUUID(),
+        timestamp: targetDate.toISOString(),
+    }));
+
+    setTasks(prevTasks => [...prevTasks, ...newTasks]);
+    toast({
+        title: "Attività copiate con successo!",
+        description: `${newTasks.length} attività aggiunte al ${format(targetDate, "d MMMM yyyy", { locale: it })}.`
+    });
+    setIsCopying(false);
+    setTasksToCopy([]);
+  };
 
   const handleTabChange = (value: string) => {
     if (value === "home") {
@@ -133,7 +231,7 @@ export function Dashboard() {
   
   return (
     <div className="space-y-4">
-       {missedDays.length > 0 && (
+       {missedDays.length > 0 && isSameDay(selectedDate, today) && (
         <Alert variant="destructive" className="mt-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Hai dei giorni non registrati!</AlertTitle>
@@ -167,10 +265,18 @@ export function Dashboard() {
         
         <TabsContent value="home" className="space-y-4">
            <div className="space-y-4">
-            <SummaryCards tasks={tasksForSelectedDate} />
+            <SummaryCards tasks={tasksForSelectedDate} isLeaveDay={isLeaveDay} />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="lg:col-span-4 grid gap-4 auto-rows-max">
-                <ActivityLogger onAddTask={handleAddTask} tags={tags} setTags={setTags} />
+                 {isLeaveDay ? (
+                  <Card className="flex items-center justify-center min-h-[400px]">
+                      <div className="text-center text-muted-foreground">
+                          <p className="text-lg font-semibold">Giorno di Assenza</p>
+                          <p>Non è possibile registrare attività.</p>
+                      </div>
+                  </Card>
+                 ) : <ActivityLogger onAddTask={handleAddTask} tags={tags} setTags={setTags} />}
+                 <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} />
               </div>
               <div className="lg:col-span-3 grid gap-4 auto-rows-max">
                  <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
@@ -180,35 +286,35 @@ export function Dashboard() {
           </div>
         </TabsContent>
         <TabsContent value="calendar" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <div className="lg:col-span-4 grid gap-4 auto-rows-max">
-              <ActivityLogger onAddTask={handleAddTask} tags={tags} setTags={setTags} />
-              <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
-            </div>
-            <div className="lg:col-span-3 grid gap-4 auto-rows-max">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Seleziona un Giorno</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleSelectDate}
-                    month={calendarMonth}
-                    onMonthChange={setCalendarMonth}
-                    modifiers={loggedDaysModifiers}
-                    modifiersStyles={loggedDaysModifiersStyles}
-                    className="rounded-md border"
-                    disabled={(date) => date > new Date() || date < addDays(new Date(), -365)}
-                    locale={it}
-                    weekStartsOn={1}
-                  />
-                </CardContent>
-              </Card>
-               <TagManager tags={tags} setTags={setTags} />
-            </div>
-          </div>
+           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <div className="lg:col-span-4 grid gap-4 auto-rows-max">
+                 <Card className={isCopying ? "border-primary ring-2 ring-primary" : ""}>
+                    <CardHeader>
+                        <CardTitle>Panoramica Calendario</CardTitle>
+                        {isCopying && <CardDescription className="text-primary font-semibold">Modalità Incolla: Seleziona una data di destinazione.</CardDescription>}
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={handleSelectDate}
+                            month={calendarMonth}
+                            onMonthChange={setCalendarMonth}
+                            modifiers={calendarModifiers}
+                            modifiersStyles={calendarModifiersStyles}
+                            className="rounded-md border"
+                            disabled={(date) => date > new Date() || date < addDays(new Date(), -365)}
+                            locale={it}
+                            weekStartsOn={1}
+                        />
+                    </CardContent>
+                </Card>
+                <CopyTasksCard isCopying={isCopying} onToggleCopyMode={handleToggleCopyMode} />
+              </div>
+              <div className="lg:col-span-3 grid gap-4 auto-rows-max">
+                <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
+              </div>
+           </div>
         </TabsContent>
          <TabsContent value="stats" className="space-y-4">
           <GlobalFilters
