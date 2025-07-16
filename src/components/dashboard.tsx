@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isWeekend, isWithinInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Copy, Settings, X } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Copy, X } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LeaveManager } from './leave-manager';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { UserProfileDisplay } from './user-profile-display';
-import { SettingsManager } from './settings-manager';
+import { SettingsDialog } from './settings-dialog';
 
 
 interface DashboardProps {
@@ -350,6 +350,14 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
           </h1>
           <div className="flex items-center gap-4">
             <UserProfileDisplay userProfile={userProfile} />
+            <SettingsDialog
+              userProfile={userProfile}
+              setUserProfile={setUserProfile}
+              saveSettings={saveSettings}
+              setSaveSettings={setSaveSettings}
+              hasPendingChanges={hasPendingChanges}
+              onSaveChanges={handleSaveChanges}
+            />
           </div>
         </div>
       {isSameDay(startOfMonth(selectedDate), startOfMonth(today)) && (
@@ -381,7 +389,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
             <TabsTrigger value="leave">Out Of Office</TabsTrigger>
-            <TabsTrigger value="settings">Impostazioni</TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-4">
             <div className="text-right">
@@ -557,16 +564,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         </TabsContent>
         <TabsContent value="leave" className="space-y-4">
           <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} tasks={tasks} />
-        </TabsContent>
-         <TabsContent value="settings" className="space-y-4">
-            <SettingsManager
-                userProfile={userProfile}
-                setUserProfile={setUserProfile}
-                saveSettings={saveSettings}
-                setSaveSettings={setSaveSettings}
-                hasPendingChanges={hasPendingChanges}
-                onSaveChanges={handleSaveChanges}
-            />
         </TabsContent>
       </Tabs>
     </div>
