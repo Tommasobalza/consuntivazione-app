@@ -35,6 +35,7 @@ export function Dashboard() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "all">("all");
   const [selectedLocation, setSelectedLocation] = useState<TaskLocation | "all">("all");
+  const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(new Date()));
 
   const tasksForSelectedDate = useMemo(() => {
     return tasks
@@ -112,10 +113,21 @@ export function Dashboard() {
   const handleDateChange = (days: number) => {
     setSelectedDate(currentDate => addDays(currentDate, days));
   };
+  
+  const handleSelectDate = (date: Date | undefined) => {
+    if (date) {
+        setSelectedDate(date);
+        setCalendarMonth(startOfMonth(date));
+    }
+  }
 
   const handleTabChange = (value: string) => {
     if (value === "home") {
         setSelectedDate(new Date());
+        setCalendarMonth(startOfMonth(new Date()));
+    }
+    if (value === "calendar") {
+        setCalendarMonth(startOfMonth(selectedDate));
     }
   };
   
@@ -182,7 +194,9 @@ export function Dashboard() {
                   <Calendar
                     mode="single"
                     selected={selectedDate}
-                    onSelect={(date) => date && setSelectedDate(date)}
+                    onSelect={handleSelectDate}
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
                     modifiers={loggedDaysModifiers}
                     modifiersStyles={loggedDaysModifiersStyles}
                     className="rounded-md border"
