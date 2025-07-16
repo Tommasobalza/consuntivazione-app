@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isWeekend, isWithinInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Copy, Settings, X } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Copy, Settings, X, Save } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
@@ -33,11 +33,12 @@ interface DashboardProps {
   setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   saveSettings: SaveSettings;
   setSaveSettings: React.Dispatch<React.SetStateAction<SaveSettings>>;
+  openSettings: () => void;
 }
 
 const MAX_DURATION_PER_DAY = 480; // 8 hours in minutes
 
-export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings }: DashboardProps) {
+export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings, openSettings }: DashboardProps) {
   const [tasks, setTasks, saveTasks, hasPendingTasks] = useLocalStorage<Task[]>('daily-tasks', []);
   const [tags, setTags, saveTags, hasPendingTags] = useLocalStorage<Tag[]>('activity-tags', []);
   const [leaveDays, setLeaveDays, saveLeaveDays, hasPendingLeave] = useLocalStorage<LeaveDay[]>('leave-days', []);
@@ -351,6 +352,12 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
           </h1>
           <div className="flex items-center gap-4">
             <UserProfileDisplay userProfile={userProfile} />
+            { !saveSettings.autoSave && hasPendingChanges &&
+                <Button onClick={handleSaveChanges}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Salva Modifiche
+                </Button>
+            }
             <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
               <Settings className="h-5 w-5" />
             </Button>
@@ -407,7 +414,9 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                               mode="single"
                               selected={selectedDate}
                               onSelect={(date) => {
-                                  if (date) setSelectedDate(date);
+                                  if (date) {
+                                      setSelectedDate(date);
+                                  }
                               }}
                               initialFocus
                               locale={it}
