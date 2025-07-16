@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Task, Tag, TaskCategory, TaskLocation } from '@/lib/types';
+import type { Task, Tag, TaskCategory, TaskLocation, TaskDuration } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -13,18 +13,22 @@ import { InsightsReport } from '@/components/insights-report';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isEqual, subDays } from 'date-fns';
+import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
 import { Button } from './ui/button';
+import { useToast } from "@/hooks/use-toast";
+
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
   const [tags, setTags] = useLocalStorage<Tag[]>('activity-tags', []);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const { toast } = useToast();
   
   // State for global filters
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -32,7 +36,28 @@ export function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory | "all">("all");
   const [selectedLocation, setSelectedLocation] = useState<TaskLocation | "all">("all");
 
+  const tasksForSelectedDate = useMemo(() => {
+    return tasks
+      .filter(task => isSameDay(new Date(task.timestamp), selectedDate))
+      .map(task => ({
+        ...task,
+        tag: task.tagId ? tags.find(t => t.id === task.tagId) : undefined
+      }));
+  }, [tasks, selectedDate, tags]);
+
   const handleAddTask = (task: Omit<Task, 'id' | 'timestamp'>) => {
+    const totalDurationForDay = tasksForSelectedDate.reduce((acc, curr) => acc + curr.duration, 0);
+    const maxDuration = 480; // 8 hours in minutes
+
+    if (totalDurationForDay + task.duration > maxDuration) {
+      toast({
+        title: "Limite giornaliero superato",
+        description: `Non puoi registrare più di 8 ore al giorno. Hai ancora ${ (maxDuration - totalDurationForDay) / 60 } ore disponibili.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newTask: Task = {
       ...task,
       id: crypto.randomUUID(),
@@ -48,15 +73,6 @@ export function Dashboard() {
   const handleClearTasks = () => {
     setTasks(prevTasks => prevTasks.filter(task => !isSameDay(new Date(task.timestamp), selectedDate)));
   };
-
-  const tasksForSelectedDate = useMemo(() => {
-    return tasks
-      .filter(task => isSameDay(new Date(task.timestamp), selectedDate))
-      .map(task => ({
-        ...task,
-        tag: task.tagId ? tags.find(t => t.id === task.tagId) : undefined
-      }));
-  }, [tasks, selectedDate, tags]);
   
   const filteredTasksForStats = useMemo(() => {
     return tasks.filter(task => {
@@ -126,13 +142,13 @@ export function Dashboard() {
                 <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)} disabled={isBefore(selectedDate, addDays(today, -365))}>
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <p className="text-lg font-semibold min-w-[220px] text-center">{isSameDay(selectedDate, today) ? "Oggi" : format(selectedDate, "EEEE, d MMMM")}</p>
+                <p className="text-lg font-semibold min-w-[220px] text-center">{isSameDay(selectedDate, today) ? "Oggi" : format(selectedDate, "EEEE, d MMMM", { locale: it })}</p>
                  <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)} disabled={isSameDay(selectedDate, today) || isBefore(today, selectedDate)}>
                     <ChevronRight className="h-5 w-5" />
                 </Button>
               </div>
             <p className="text-sm text-muted-foreground">
-              {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM")}`}
+              {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM", { locale: it })}`}
             </p>
           </div>
         </div>
@@ -171,6 +187,8 @@ export function Dashboard() {
                     modifiersStyles={loggedDaysModifiersStyles}
                     className="rounded-md border"
                     disabled={(date) => date > new Date() || date < addDays(new Date(), -365)}
+                    locale={it}
+                    weekStartsOn={1}
                   />
                 </CardContent>
               </Card>
