@@ -132,7 +132,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
       const isMonthMatch = getMonth(taskDate) === selectedMonth && getYear(taskDate) === selectedYear;
       const isCategoryMatch = selectedCategory === 'all' || task.category === selectedCategory;
       const isLocationMatch = selectedLocation === 'all' || task.location === selectedLocation;
-      const isActivityNameMatch = selectedActivityName === '' || task.name.toLowerCase().includes(selectedActivityName.toLowerCase());
+      const isActivityNameMatch = selectedActivityName === '' || (task.name && task.name.toLowerCase().includes(selectedActivityName.toLowerCase()));
       return isMonthMatch && isCategoryMatch && isLocationMatch && isActivityNameMatch;
     });
   }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation, selectedActivityName]);
@@ -448,4 +448,5 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   );
 }
 
+    
     
