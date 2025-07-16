@@ -6,61 +6,55 @@ To get started, take a look at src/app/page.tsx.
 
 ## Deployment
 
-### Firebase App Hosting (Opzione 1)
+Una volta che il tuo codice è pronto, puoi pubblicarlo online gratuitamente. Il primo passo è caricarlo su GitHub.
 
-This application is configured for [Firebase App Hosting](https://firebase.google.com/docs/app-hosting). You can deploy it for free for personal use on the Firebase Spark plan.
+### 1. Caricare il Codice su GitHub
 
-Follow these steps to deploy your application:
+Se non hai mai usato Git o GitHub, segui questi passaggi dal terminale nella cartella del tuo progetto.
 
-1.  **Install the Firebase CLI**:
-    If you don't have it installed, run the following command in your terminal:
+1.  **Crea un repository su GitHub**:
+    *   Vai su [github.com/new](https://github.com/new).
+    *   Assegna un nome al repository (es. `consuntivazione-app`).
+    *   Assicurati che sia "Public" o "Private" a tua scelta.
+    *   **Non** inizializzarlo con un `README` o `.gitignore`, li abbiamo già.
+    *   Clicca su "Create repository".
+
+2.  **Inizializza Git nel tuo progetto**:
     ```bash
-    npm install -g firebase-tools
+    git init
     ```
 
-2.  **Login to Firebase**:
+3.  **Aggiungi e salva i file**:
     ```bash
-    firebase login
+    git add .
+    git commit -m "Primo commit: versione iniziale dell'app"
     ```
 
-3.  **Create a Firebase Project**:
-    Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project if you don't have one already.
-
-4.  **Link your local project to Firebase**:
-    Run the following command and select the Firebase project you created.
+4.  **Collega il repository locale a GitHub**:
+    Sostituisci l'URL con quello fornito da GitHub per il tuo repository.
     ```bash
-    firebase use --add
+    git remote add origin https://github.com/TUO_NOME_UTENTE/NOME_TUO_REPOSITORY.git
     ```
 
-5.  **Create an App Hosting backend**:
-    You'll need to create a "backend" resource in your Firebase project. Choose a location close to your users.
+5.  **Carica il codice**:
     ```bash
-    firebase apphosting:backends:create --location us-central1
-    ```
-    This will create a backend with the ID `nextn`.
-
-6.  **Deploy your app**:
-    Finally, build and deploy your application with this command:
-    ```bash
-    firebase apphosting:backends:deploy nextn
+    git branch -M main
+    git push -u origin main
     ```
 
-After the deployment is complete, the CLI will output the URL where your application is live. That's it!
+Ora il tuo codice è su GitHub! Da qui, puoi scegliere una delle seguenti piattaforme per la pubblicazione.
 
 ---
 
-### Altre Opzioni di Deployment Gratuito
-
-Se riscontri problemi o preferisci altre piattaforme, ecco due alternative eccellenti per pubblicare la tua applicazione Next.js gratuitamente.
+### 2. Scegli una Piattaforma di Deployment
 
 #### Vercel (Consigliato)
 
 Vercel è la piattaforma creata dagli stessi sviluppatori di Next.js, quindi l'integrazione è perfetta. Il loro piano "Hobby" è gratuito e ideale per progetti personali.
 
-1.  **Crea un repository Git**: Se non l'hai già fatto, carica il tuo codice su un repository GitHub, GitLab o Bitbucket.
-2.  **Registrati su Vercel**: Vai su [vercel.com](https://vercel.com/) e registrati con il tuo account Git.
-3.  **Importa il Progetto**: Dalla dashboard di Vercel, clicca su "Add New... > Project" e seleziona il repository che hai appena creato.
-4.  **Configura e Pubblica**: Vercel riconoscerà automaticamente che si tratta di un'app Next.js e imposterà tutto per te. Clicca su "Deploy".
+1.  **Registrati su Vercel**: Vai su [vercel.com](https://vercel.com/) e registrati con il tuo account GitHub.
+2.  **Importa il Progetto**: Dalla dashboard di Vercel, clicca su "Add New... > Project" e seleziona il repository che hai appena creato su GitHub.
+3.  **Configura e Pubblica**: Vercel riconoscerà automaticamente che si tratta di un'app Next.js e imposterà tutto per te. Clicca su "Deploy".
 
 In pochi minuti, la tua app sarà online. Ad ogni `git push` sul tuo repository, Vercel creerà automaticamente una nuova versione.
 
@@ -68,10 +62,35 @@ In pochi minuti, la tua app sarà online. Ad ogni `git push` sul tuo repository,
 
 Netlify è un'altra ottima piattaforma con un supporto eccellente per Next.js e un generoso piano gratuito.
 
-1.  **Crea un repository Git**: Assicurati che il tuo codice sia su GitHub, GitLab o Bitbucket.
-2.  **Registrati su Netlify**: Vai su [app.netlify.com](https://app.netlify.com/) e registrati con il tuo account Git.
-3.  **Aggiungi un nuovo sito**: Dalla dashboard, clicca su "Add new site > Import an existing project" e scegli il tuo repository.
-4.  **Configura le impostazioni**: Netlify rileverà che è un progetto Next.js. Le impostazioni predefinite dovrebbero funzionare correttamente.
-5.  **Pubblica il sito**: Clicca su "Deploy site".
+1.  **Registrati su Netlify**: Vai su [app.netlify.com](https://app.netlify.com/) e registrati con il tuo account GitHub.
+2.  **Aggiungi un nuovo sito**: Dalla dashboard, clicca su "Add new site > Import an existing project" e scegli il tuo repository GitHub.
+3.  **Configura le impostazioni**: Netlify rileverà che è un progetto Next.js. Le impostazioni predefinite dovrebbero funzionare correttamente.
+4.  **Pubblica il sito**: Clicca su "Deploy site".
 
 Come per Vercel, Netlify pubblicherà automaticamente ogni modifica che carichi sul tuo repository Git.
+
+#### Firebase App Hosting
+
+Questa applicazione è anche configurata per [Firebase App Hosting](https://firebase.google.com/docs/app-hosting).
+
+1.  **Installa la Firebase CLI**:
+    ```bash
+    npm install -g firebase-tools
+    ```
+2.  **Login a Firebase**:
+    ```bash
+    firebase login
+    ```
+3.  **Crea un progetto Firebase**: Vai alla [Firebase Console](https://console.firebase.google.com/) se non ne hai uno.
+4.  **Collega il progetto locale a Firebase**:
+    ```bash
+    firebase use --add
+    ```
+5.  **Crea un backend App Hosting**:
+    ```bash
+    firebase apphosting:backends:create --location us-central1
+    ```
+6.  **Esegui il deploy**:
+    ```bash
+    firebase apphosting:backends:deploy nextn
+    ```
