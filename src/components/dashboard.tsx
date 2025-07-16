@@ -203,19 +203,19 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
   const calendarModifiersStyles = {
     logged: {
-      color: '#16a34a', // More vibrant green
+      color: 'hsl(var(--chart-3))', 
       fontWeight: 'bold',
     },
     leave: {
       color: 'hsl(var(--accent))',
-      backgroundColor: 'hsl(var(--accent) / 0.2)', // Higher transparency
+      backgroundColor: 'hsl(var(--accent) / 0.1)',
       textDecoration: 'line-through'
     },
     copying: {
       cursor: 'copy'
     },
     missed: {
-      color: '#ef4444', // More vibrant red
+      color: 'hsl(var(--destructive))', 
       fontWeight: 'bold'
     },
     selected: {
