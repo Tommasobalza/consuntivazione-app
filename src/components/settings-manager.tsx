@@ -59,7 +59,7 @@ interface SettingsManagerProps {
 }
 
 // IMPORTANTE: Sostituisci questo URL con quello del tuo repository GitHub dopo aver caricato il codice.
-const GITHUB_REPO_URL = "https://github.com/TUO_NOME_UTENTE/NOME_TUO_REPOSITORY";
+const GITHUB_REPO_URL = "https://github.com/Tommasobalza/consuntivazione-app";
 
 export function SettingsManager({ 
   userProfile, 
@@ -368,5 +368,3 @@ export function SettingsManager({
     </div>
   );
 }
-
-    

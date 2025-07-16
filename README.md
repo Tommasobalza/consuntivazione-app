@@ -33,7 +33,7 @@ Se non hai mai usato Git o GitHub, segui questi passaggi dal terminale nella car
 4.  **Collega il repository locale a GitHub**:
     Sostituisci l'URL con quello fornito da GitHub per il tuo repository.
     ```bash
-    git remote add origin https://github.com/TUO_NOME_UTENTE/NOME_TUO_REPOSITORY.git
+    git remote add origin https://github.com/Tommasobalza/consuntivazione-app.git
     ```
 
 5.  **Carica il codice**:
