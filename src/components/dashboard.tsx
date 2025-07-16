@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isWeekend } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Save, X, Copy } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Save, X, Copy, Settings } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
@@ -24,7 +24,7 @@ import { Button } from './ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { LeaveManager } from './leave-manager';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
+import { UserProfileDisplay } from './user-profile-display';
 
 
 interface DashboardProps {
@@ -32,16 +32,15 @@ interface DashboardProps {
   setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   saveSettings: SaveSettings;
   setSaveSettings: React.Dispatch<React.SetStateAction<SaveSettings>>;
+  openSettings: () => void;
 }
 
 const MAX_DURATION_PER_DAY = 480; // 8 hours in minutes
 
-export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings }: DashboardProps) {
-  const [tasks, setTasks, saveTasks] = useLocalStorage<Task[]>('daily-tasks', [], { silent: false });
-  const [tags, setTags, saveTags] = useLocalStorage<Tag[]>('activity-tags', [], { silent: true });
-  const [leaveDays, setLeaveDays, saveLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', [], { silent: true });
-  
-  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings, openSettings }: DashboardProps) {
+  const [tasks, setTasks, saveTasks, hasPendingTasks] = useLocalStorage<Task[]>('daily-tasks', []);
+  const [tags, setTags, saveTags, hasPendingTags] = useLocalStorage<Tag[]>('activity-tags', []);
+  const [leaveDays, setLeaveDays, saveLeaveDays, hasPendingLeave] = useLocalStorage<LeaveDay[]>('leave-days', []);
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
@@ -58,21 +57,13 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
   const [daysToPaste, setDaysToPaste] = useState<Date[]>([]);
   const [lastSelectedDay, setLastSelectedDay] = useState<Date | undefined>(undefined);
-
-
-  useEffect(() => {
-    if (!saveSettings.autoSave) {
-      setHasPendingChanges(true);
-    } else {
-      setHasPendingChanges(false);
-    }
-  }, [tasks, tags, leaveDays, userProfile, saveSettings.autoSave]);
   
+  const hasPendingChanges = hasPendingTasks || hasPendingTags || hasPendingLeave;
+
   const handleSaveChanges = () => {
     saveTasks();
     saveTags();
     saveLeaveDays();
-    setHasPendingChanges(false);
     toast({
       title: "Modifiche salvate",
       description: "Tutti i tuoi dati sono stati salvati con successo.",
@@ -338,6 +329,23 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   
   return (
     <div className="space-y-4">
+       <div className="flex items-center justify-between space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Consuntivazione
+          </h1>
+          <div className="flex items-center gap-4">
+             {!saveSettings.autoSave && hasPendingChanges && (
+              <Button onClick={handleSaveChanges}>
+                <Save className="mr-2 h-4 w-4" />
+                Salva Modifiche
+              </Button>
+            )}
+            <UserProfileDisplay userProfile={userProfile} />
+            <Button variant="ghost" size="icon" onClick={openSettings}>
+              <Settings className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
       {isSameDay(startOfMonth(selectedDate), startOfMonth(today)) && (
           <>
             {missedDaysCurrentMonth.length > 0 ? (
@@ -369,12 +377,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
             <TabsTrigger value="leave">Out Of Office</TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-4">
-            {!saveSettings.autoSave && hasPendingChanges && (
-              <Button onClick={handleSaveChanges}>
-                <Save className="mr-2 h-4 w-4" />
-                Salva Modifiche
-              </Button>
-            )}
             <div className="text-right">
                 <div className="flex items-center justify-end gap-1">
                   <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)}>

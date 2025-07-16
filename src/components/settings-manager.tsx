@@ -169,7 +169,7 @@ export function SettingsManager({
                     Salvataggio Automatico
                     </p>
                     <p className="text-sm text-muted-foreground">
-                    Salva automaticamente le modifiche.
+                    Salva automaticamente le modifiche in background.
                     </p>
                 </div>
                 <Switch
@@ -180,7 +180,7 @@ export function SettingsManager({
                 </div>
                 {!saveSettings.autoSave && (
                     <p className="text-sm text-muted-foreground mt-4">
-                        Sei in modalità di salvataggio manuale. Ricorda di cliccare su "Salva Modifiche".
+                        Sei in modalità di salvataggio manuale. Ricorda di cliccare su "Salva Modifiche" per non perdere il tuo lavoro.
                     </p>
                 )}
             </CardContent>
