@@ -268,6 +268,7 @@ export function Dashboard() {
             <TabsTrigger value="home">Home</TabsTrigger>
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
+            <TabsTrigger value="leave">Assenze</TabsTrigger>
           </TabsList>
            <div className="text-right">
               <div className="flex items-center justify-end gap-1">
@@ -317,7 +318,7 @@ export function Dashboard() {
                       </div>
                   </Card>
                  ) : <ActivityLogger onAddTask={handleAddTask} tags={tags} setTags={setTags} />}
-                 <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} />
+                 
               </div>
               <div className="grid gap-4 auto-rows-max">
                  <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
@@ -395,6 +396,9 @@ export function Dashboard() {
                 </Card>
               </div>
             </div>
+        </TabsContent>
+        <TabsContent value="leave" className="space-y-4">
+          <LeaveManager leaveDays={leaveDays} setLeaveDays={setLeaveDays} />
         </TabsContent>
       </Tabs>
     </div>
