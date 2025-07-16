@@ -27,7 +27,19 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
-import { Save } from "lucide-react";
+import { Download, Save, Upload, Github } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Il nome deve avere almeno 2 caratteri.").max(50),
@@ -46,6 +58,8 @@ interface SettingsManagerProps {
   onSaveChanges: () => void;
 }
 
+const GITHUB_REPO_URL = "https://github.com/TUO_NOME_UTENTE/NOME_TUO_REPOSITORY"; // L'utente dovrà sostituire questo
+
 export function SettingsManager({ 
   userProfile, 
   setUserProfile, 
@@ -54,6 +68,9 @@ export function SettingsManager({
   hasPendingChanges,
   onSaveChanges
 }: SettingsManagerProps) {
+  const { toast } = useToast();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: userProfile,
@@ -72,8 +89,93 @@ export function SettingsManager({
   
   const CurrentIcon = userIcons[userProfile.icon as keyof typeof userIcons] || userIcons.User;
 
+  const handleExportData = () => {
+    try {
+      const dataToExport = {
+        'daily-tasks': JSON.parse(localStorage.getItem('daily-tasks') || '[]'),
+        'activity-tags': JSON.parse(localStorage.getItem('activity-tags') || '[]'),
+        'leave-days': JSON.parse(localStorage.getItem('leave-days') || '[]'),
+        'user-profile': JSON.parse(localStorage.getItem('user-profile') || '{}'),
+        'save-settings': JSON.parse(localStorage.getItem('save-settings') || '{}'),
+      };
+      const jsonString = JSON.stringify(dataToExport, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "consuntivazione_backup.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Esportazione completata",
+        description: "I tuoi dati sono stati salvati nel file consuntivazione_backup.json.",
+      });
+    } catch (error) {
+      console.error("Errore durante l'esportazione dei dati:", error);
+      toast({
+        title: "Esportazione fallita",
+        description: "Si è verificato un errore durante l'esportazione dei dati.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') throw new Error("File non valido");
+        const data = JSON.parse(text);
+        
+        // Validazione base
+        const requiredKeys = ['daily-tasks', 'activity-tags', 'leave-days', 'user-profile', 'save-settings'];
+        const dataKeys = Object.keys(data);
+        if (!requiredKeys.every(key => dataKeys.includes(key))) {
+            throw new Error("Il file di backup non ha un formato valido.");
+        }
+
+        // Sovrascrivi localStorage
+        Object.keys(data).forEach(key => {
+            localStorage.setItem(key, JSON.stringify(data[key]));
+        });
+
+        toast({
+          title: "Importazione completata",
+          description: "I tuoi dati sono stati ripristinati. La pagina verrà ricaricata.",
+        });
+
+        // Ricarica la pagina per applicare le modifiche
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        console.error("Errore durante l'importazione dei dati:", error);
+        toast({
+          title: "Importazione fallita",
+          description: (error as Error).message || "Il file selezionato non è un backup valido.",
+          variant: "destructive",
+        });
+      } finally {
+        // Resetta l'input per permettere di ricaricare lo stesso file
+        if(event.target) event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Profilo Utente</CardTitle>
@@ -176,7 +278,7 @@ export function SettingsManager({
                       Salvataggio Automatico
                       </p>
                       <p className="text-sm text-muted-foreground">
-                      Salva automaticamente le modifiche in background.
+                      Salva automaticamente le modifiche.
                       </p>
                   </div>
                   <Switch
@@ -189,7 +291,7 @@ export function SettingsManager({
                 <CardFooter className="pt-4">
                     <div className="flex flex-col gap-2 w-full">
                          <p className="text-sm text-muted-foreground">
-                            Hai delle modifiche non salvate. Clicca qui per salvarle.
+                            Hai delle modifiche non salvate.
                          </p>
                         <Button onClick={onSaveChanges} className="w-full">
                             <Save className="mr-2 h-4 w-4" />
@@ -198,6 +300,72 @@ export function SettingsManager({
                     </div>
                 </CardFooter>
             )}
+        </Card>
+      </div>
+
+       <div className="space-y-6">
+        <Card>
+            <CardHeader>
+            <CardTitle>Gestione Dati</CardTitle>
+            <CardDescription>
+                Salva i tuoi dati in un file per backup o per trasferirli.
+            </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <Button onClick={handleExportData} variant="outline">
+                    <Download className="mr-2 h-4 w-4"/>
+                    Esporta Dati
+               </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button>
+                        <Upload className="mr-2 h-4 w-4"/>
+                        Importa Dati
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Sei sicuro di voler importare i dati?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Questa azione sovrascriverà tutti i dati attuali (attività, tag, impostazioni) con quelli contenuti nel file di backup. L'operazione non può essere annullata.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annulla</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleImportClick}>Continua e Seleziona File</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+               <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="application/json"
+                onChange={handleFileChange}
+              />
+            </CardContent>
+        </Card>
+
+         <Card>
+            <CardHeader>
+            <CardTitle>Codice Sorgente</CardTitle>
+            <CardDescription>
+                Scarica il codice sorgente dell'applicazione da GitHub.
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild className="w-full">
+                <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
+                    <Github className="mr-2 h-4 w-4"/>
+                    Vai al Repository
+                </a>
+              </Button>
+            </CardContent>
+            <CardFooter>
+                <p className="text-xs text-muted-foreground">
+                    Assicurati di aver caricato il progetto su GitHub e di aver aggiornato l'URL nel codice.
+                </p>
+            </CardFooter>
         </Card>
       </div>
     </div>
