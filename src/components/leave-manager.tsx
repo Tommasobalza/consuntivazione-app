@@ -100,7 +100,7 @@ export function LeaveManager({ leaveDays, setLeaveDays }: LeaveManagerProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gestione Assenze</CardTitle>
+        <CardTitle>Gestione Out Of Office</CardTitle>
         <CardDescription>
           Aggiungi giorni di ferie, malattia o festività.
         </CardDescription>

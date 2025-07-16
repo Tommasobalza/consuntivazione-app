@@ -295,7 +295,7 @@ export function Dashboard() {
             <TabsTrigger value="home">Home</TabsTrigger>
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
-            <TabsTrigger value="leave">Assenze</TabsTrigger>
+            <TabsTrigger value="leave">Out Of Office</TabsTrigger>
             <TabsTrigger value="settings">Impostazioni</TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-4">
@@ -447,3 +447,5 @@ export function Dashboard() {
     </div>
   );
 }
+
+    
