@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2 } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
@@ -107,7 +107,10 @@ export function Dashboard() {
   const startOfCurrentMonth = startOfMonth(new Date(selectedYear, selectedMonth));
   
   const daysInMonth = useMemo(() => {
-    const monthEndDate = isSameDay(startOfCurrentMonth, startOfMonth(today)) ? today : new Date(selectedYear, selectedMonth + 1, 0);
+    const currentMonthDate = new Date();
+    const isCurrentMonth = getYear(startOfCurrentMonth) === getYear(currentMonthDate) && getMonth(startOfCurrentMonth) === getMonth(currentMonthDate);
+    const monthEndDate = isCurrentMonth ? today : new Date(selectedYear, selectedMonth + 1, 0);
+    if (isBefore(monthEndDate, startOfCurrentMonth)) return [];
     return eachDayOfInterval({ start: startOfCurrentMonth, end: monthEndDate });
   }, [startOfCurrentMonth, today, selectedYear, selectedMonth]);
 
@@ -121,6 +124,11 @@ export function Dashboard() {
         return isBefore(day, today) && !isWeekend && !loggedDays.has(dayString) && !leaveDaysSet.has(dayString);
     });
   }, [tasks, leaveDays, daysInMonth, today]);
+
+  const isCurrentMonthCompleted = useMemo(() => {
+    const isCurrentMonth = getMonth(new Date()) === selectedMonth && getYear(new Date()) === selectedYear;
+    return isCurrentMonth && missedDays.length === 0 && daysInMonth.length > 0;
+  }, [selectedMonth, selectedYear, missedDays, daysInMonth]);
 
   const calendarModifiers = useMemo(() => ({
     logged: tasks.map(task => new Date(task.timestamp)),
@@ -232,15 +240,28 @@ export function Dashboard() {
   
   return (
     <div className="space-y-4">
-       {missedDays.length > 0 && isSameDay(selectedDate, today) && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Hai dei giorni non registrati!</AlertTitle>
-          <AlertDescription>
-            Hai {missedDays.length} giorno/i passato/i in questo mese senza attività registrate. Vai alla scheda Calendario per compilare i dati mancanti.
-          </AlertDescription>
-        </Alert>
+      {isSameDay(startOfMonth(selectedDate), startOfMonth(today)) && (
+          <>
+            {missedDays.length > 0 ? (
+                <Alert variant="destructive" className="mt-4 bg-red-50 dark:bg-red-950 border-red-500/50 text-red-700 dark:text-red-300 [&>svg]:text-red-600 dark:[&>svg]:text-red-400">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle className="font-bold">Hai dei giorni non registrati!</AlertTitle>
+                    <AlertDescription>
+                        Hai {missedDays.length} giorno/i passato/i in questo mese senza attività registrate. Vai alla scheda Calendario per compilare i dati mancanti.
+                    </AlertDescription>
+                </Alert>
+            ) : isCurrentMonthCompleted && (
+                 <Alert className="mt-4 bg-green-50 dark:bg-green-950 border-green-500/50 text-green-700 dark:text-green-300 [&>svg]:text-green-600 dark:[&>svg]:text-green-400">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertTitle className="font-bold">Ottimo lavoro!</AlertTitle>
+                    <AlertDescription>
+                        Tutti i giorni lavorativi di questo mese sono stati compilati. Continua così!
+                    </AlertDescription>
+                </Alert>
+            )}
+        </>
       )}
+
       <Tabs defaultValue="home" className="space-y-4" onValueChange={handleTabChange}>
         <div className='flex justify-between items-start'>
           <TabsList>
@@ -273,6 +294,7 @@ export function Dashboard() {
                             initialFocus
                             locale={it}
                             weekStartsOn={1}
+                            
                         />
                     </PopoverContent>
                 </Popover>
@@ -378,9 +400,5 @@ export function Dashboard() {
     </div>
   );
 }
-
-    
-
-    
 
     
