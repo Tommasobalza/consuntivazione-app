@@ -1,20 +1,28 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { UserProfile, SaveSettings } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Dashboard } from "@/components/dashboard";
-import { UserProfileDisplay } from "@/components/user-profile-display";
 import { SettingsDialog } from '@/components/settings-dialog';
-import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
 import { AutoSaveProvider } from '@/context/autosave-context';
 
 export default function Home() {
   const [userProfile, setUserProfile] = useLocalStorage<UserProfile>('user-profile', { name: 'Utente', role: 'Membro del Team', icon: 'User' });
   const [saveSettings, setSaveSettings] = useLocalStorage<SaveSettings>('save-settings', { autoSave: false });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    // Evita di renderizzare i componenti dipendenti da localStorage sul server
+    // per prevenire errori di idratazione.
+    return null;
+  }
 
   return (
     <AutoSaveProvider>
