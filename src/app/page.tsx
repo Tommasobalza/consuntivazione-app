@@ -6,6 +6,7 @@ import type { UserProfile, SaveSettings } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Dashboard } from "@/components/dashboard";
 import { AutoSaveProvider } from '@/context/autosave-context';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   const [userProfile, setUserProfile] = useLocalStorage<UserProfile>('user-profile', { name: 'Utente', role: 'Membro del Team', icon: 'User' });
@@ -13,13 +14,18 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // This effect runs only on the client, after the component has mounted.
     setIsClient(true);
   }, []);
 
   if (!isClient) {
-    // Evita di renderizzare i componenti dipendenti da localStorage sul server
-    // per prevenire errori di idratazione.
-    return null;
+    // While rendering on the server or during the initial client render, 
+    // show a loading state to prevent hydration mismatch.
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
   }
 
   return (
