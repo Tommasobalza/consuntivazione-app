@@ -138,17 +138,30 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation, selectedActivityName]);
 
   const today = startOfDay(new Date());
-  const startOfCurrentMonth = startOfMonth(new Date(selectedYear, selectedMonth));
-  
-  const daysInMonth = useMemo(() => {
-    const currentMonthDate = new Date();
-    const isCurrentMonth = getYear(startOfCurrentMonth) === getYear(currentMonthDate) && getMonth(startOfCurrentMonth) === getMonth(currentMonthDate);
-    const monthEndDate = isCurrentMonth ? today : new Date(selectedYear, selectedMonth + 1, 0);
-    if (isBefore(monthEndDate, startOfCurrentMonth)) return [];
-    return eachDayOfInterval({ start: startOfCurrentMonth, end: monthEndDate });
-  }, [startOfCurrentMonth, today, selectedYear, selectedMonth]);
 
   const missedDays = useMemo(() => {
+    const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
+    const leaveDaysSet = new Set(leaveDays.map(day => startOfDay(new Date(day.date)).toDateString()));
+    
+    // Check all days from the beginning of logged data up to today
+    const firstLogDate = tasks.length > 0 ? startOfDay(new Date(Math.min(...tasks.map(t => new Date(t.timestamp).getTime())))) : today;
+    const checkStartDate = isBefore(firstLogDate, startOfMonth(new Date("2024-01-01"))) ? firstLogDate : new Date("2024-01-01");
+    
+    const daysToCheck = eachDayOfInterval({ start: checkStartDate, end: today });
+
+    return daysToCheck.filter(day => {
+        const dayString = day.toDateString();
+        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+        return !isWeekend && !loggedDays.has(dayString) && !leaveDaysSet.has(dayString);
+    });
+  }, [tasks, leaveDays, today]);
+
+  const missedDaysCurrentMonth = useMemo(() => {
+    const startOfCurrentMonth = startOfMonth(new Date(selectedYear, selectedMonth));
+    const monthEndDate = getYear(startOfCurrentMonth) === getYear(today) && getMonth(startOfCurrentMonth) === getMonth(today) ? today : new Date(selectedYear, selectedMonth + 1, 0);
+     if (isBefore(monthEndDate, startOfCurrentMonth)) return [];
+    
+    const daysInMonth = eachDayOfInterval({ start: startOfCurrentMonth, end: monthEndDate });
     const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
     const leaveDaysSet = new Set(leaveDays.map(day => startOfDay(new Date(day.date)).toDateString()));
     
@@ -157,18 +170,20 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         const isWeekend = day.getDay() === 0 || day.getDay() === 6;
         return isBefore(day, today) && !isWeekend && !loggedDays.has(dayString) && !leaveDaysSet.has(dayString);
     });
-  }, [tasks, leaveDays, daysInMonth, today]);
+  }, [tasks, leaveDays, today, selectedMonth, selectedYear]);
 
   const isCurrentMonthCompleted = useMemo(() => {
     const isCurrentMonth = getMonth(new Date()) === selectedMonth && getYear(new Date()) === selectedYear;
-    return isCurrentMonth && missedDays.length === 0 && daysInMonth.length > 0;
-  }, [selectedMonth, selectedYear, missedDays, daysInMonth]);
+    return isCurrentMonth && missedDaysCurrentMonth.length === 0;
+  }, [selectedMonth, selectedYear, missedDaysCurrentMonth]);
+
 
   const calendarModifiers = useMemo(() => ({
     logged: tasks.map(task => new Date(task.timestamp)),
     leave: leaveDays.map(day => new Date(day.date)),
     copying: isCopying ? new Date() : undefined, // just to apply style
-  }), [tasks, leaveDays, isCopying]);
+    missed: missedDays,
+  }), [tasks, leaveDays, isCopying, missedDays]);
 
   const calendarModifiersStyles = {
     logged: {
@@ -185,6 +200,10 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     selected: {
         backgroundColor: 'hsl(var(--primary) / 0.3)',
         color: 'hsl(var(--primary-foreground))'
+    },
+    missed: {
+      color: 'hsl(var(--destructive) / 0.9)',
+      fontWeight: 'bold'
     }
   };
 
@@ -280,12 +299,12 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     <div className="space-y-4">
       {isSameDay(startOfMonth(selectedDate), startOfMonth(today)) && (
           <>
-            {missedDays.length > 0 ? (
+            {missedDaysCurrentMonth.length > 0 ? (
                 <Alert variant="destructive" className="mt-4 bg-red-50 dark:bg-red-950 border-red-500/50 text-red-700 dark:text-red-300 [&>svg]:text-red-600 dark:[&>svg]:text-red-400">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle className="font-bold">Hai dei giorni non registrati!</AlertTitle>
                     <AlertDescription>
-                        Hai {missedDays.length} giorno/i passato/i in questo mese senza attività registrate. Vai alla scheda Calendario per compilare i dati mancanti.
+                        Hai {missedDaysCurrentMonth.length} giorno/i passato/i in questo mese senza attività registrate. Vai alla scheda Calendario per compilare i dati mancanti.
                     </AlertDescription>
                 </Alert>
             ) : isCurrentMonthCompleted && (
@@ -340,6 +359,8 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                               initialFocus
                               locale={it}
                               weekStartsOn={1}
+                              modifiers={calendarModifiers}
+                              modifiersStyles={calendarModifiersStyles}
                           />
                       </PopoverContent>
                   </Popover>
@@ -451,6 +472,3 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     </div>
   );
 }
-
-    
-    

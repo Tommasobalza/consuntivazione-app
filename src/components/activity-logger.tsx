@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm, Controller } from "react-hook-form"
@@ -60,7 +61,7 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
     defaultValues: {
       name: "",
       description: "",
-      duration: 30,
+      duration: 480,
       category: "Sviluppo",
       location: "Smart Working",
       tagId: "manual"
@@ -85,7 +86,7 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
       form.reset({
         name: "",
         description: "",
-        duration: 30,
+        duration: 480,
         category: "Sviluppo",
         location: "Smart Working",
         tagId: "manual",
