@@ -16,8 +16,20 @@ export function useLocalStorage<T>(
   const { silent = false } = options;
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const autoSaveContext = useContext(AutoSaveContext);
+
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+    try {
+      const saveSettingsItem = window.localStorage.getItem('save-settings');
+      return saveSettingsItem ? JSON.parse(saveSettingsItem).autoSave : true;
+    } catch {
+      return true;
+    }
+  });
+
 
   useEffect(() => {
     try {
@@ -25,12 +37,6 @@ export function useLocalStorage<T>(
       if (item) {
         setStoredValue(JSON.parse(item));
       }
-      
-      const saveSettingsItem = window.localStorage.getItem('save-settings');
-      if (saveSettingsItem) {
-        setAutoSaveEnabled(JSON.parse(saveSettingsItem).autoSave);
-      }
-
     } catch (error) {
       console.error(`Error reading from localStorage key “${key}”:`, error);
     } finally {
@@ -43,16 +49,17 @@ export function useLocalStorage<T>(
       autoSaveContext.setIsSaving(true);
     }
     try {
+        // Use a timeout to simulate network latency and batch savings
         setTimeout(() => {
           window.localStorage.setItem(key, JSON.stringify(storedValue));
           if (autoSaveContext && autoSaveEnabled && !silent) {
             autoSaveContext.setIsSaving(false);
             autoSaveContext.setJustSaved(true);
           }
-        }, 500); // Simulate network latency
+        }, 500); 
     } catch (error) {
       console.error(`Error writing to localStorage key “${key}”:`, error);
-       if (autoSaveContext && !silent) {
+       if (autoSaveContext && autoSaveEnabled && !silent) {
         autoSaveContext.setIsSaving(false);
       }
     }
@@ -68,8 +75,10 @@ export function useLocalStorage<T>(
 
 
   useEffect(() => {
-    if (isInitialized && autoSaveEnabled) {
+    if (isInitialized) {
+      if (autoSaveEnabled) {
         saveValue();
+      }
     }
   }, [storedValue, isInitialized, autoSaveEnabled, saveValue]);
 
@@ -78,7 +87,8 @@ export function useLocalStorage<T>(
         if (event.key === 'save-settings') {
             try {
                 if (event.newValue) {
-                    setAutoSaveEnabled(JSON.parse(event.newValue).autoSave);
+                    const newSettings = JSON.parse(event.newValue);
+                    setAutoSaveEnabled(newSettings.autoSave);
                 }
             } catch (error) {
                 console.error("Error parsing save-settings from storage event", error)

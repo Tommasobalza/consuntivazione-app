@@ -15,16 +15,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isWeekend } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { add, differenceInDays } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Save } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle2, Save, X, Copy } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
 import { Button } from './ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { LeaveManager } from './leave-manager';
-import { CopyTasksCard } from './copy-tasks-card';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 
@@ -39,7 +37,7 @@ interface DashboardProps {
 const MAX_DURATION_PER_DAY = 480; // 8 hours in minutes
 
 export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSettings }: DashboardProps) {
-  const [tasks, setTasks, saveTasks] = useLocalStorage<Task[]>('daily-tasks', []);
+  const [tasks, setTasks, saveTasks] = useLocalStorage<Task[]>('daily-tasks', [], { silent: false });
   const [tags, setTags, saveTags] = useLocalStorage<Tag[]>('activity-tags', [], { silent: true });
   const [leaveDays, setLeaveDays, saveLeaveDays] = useLocalStorage<LeaveDay[]>('leave-days', [], { silent: true });
   
@@ -56,10 +54,9 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const [calendarMonth, setCalendarMonth] = useState<Date>(startOfMonth(new Date()));
 
   const [isCopying, setIsCopying] = useState(false);
-  const [tasksToCopy, setTasksToCopy] = useState<Omit<Task, 'id' | 'timestamp'>[]>([]);
+  const [tasksToCopy, setTasksToCopy] = useState<Omit<Task, 'id' | 'timestamp' | 'tag'>[]>([]);
 
   const [daysToPaste, setDaysToPaste] = useState<Date[]>([]);
-  const [isConfirmingPaste, setIsConfirmingPaste] = useState(false);
   const [lastSelectedDay, setLastSelectedDay] = useState<Date | undefined>(undefined);
 
 
@@ -224,6 +221,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   
   const handleDayClick = (day: Date, modifiers: { selected?: boolean }, e: React.MouseEvent) => {
     if (isCopying) {
+        e.preventDefault();
         let newDaysToPaste = [...daysToPaste];
         if (e.shiftKey && lastSelectedDay) {
             const range = eachDayOfInterval({
@@ -243,11 +241,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         }
         setDaysToPaste(newDaysToPaste);
         setLastSelectedDay(day);
-
-        if (newDaysToPaste.length > 0) {
-          setIsConfirmingPaste(true);
-        }
-
     } else {
         setSelectedDate(day);
         setCalendarMonth(startOfMonth(day));
@@ -270,7 +263,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         });
         return;
       }
-      const tasksToCopyData = tasksOnSelectedDay.map(({ id, timestamp, ...rest }) => rest);
+      const tasksToCopyData = tasksOnSelectedDay.map(({ id, timestamp, tag, ...rest }) => rest);
       setTasksToCopy(tasksToCopyData);
       setIsCopying(true);
       toast({
@@ -325,11 +318,11 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         });
     }
 
+    // Reset copy state
     setIsCopying(false);
     setTasksToCopy([]);
     setDaysToPaste([]);
     setLastSelectedDay(undefined);
-    setIsConfirmingPaste(false);
   };
 
 
@@ -342,37 +335,9 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         setCalendarMonth(startOfMonth(selectedDate));
     }
   };
-
-  const pasteDialogDescription = useMemo(() => {
-    if (daysToPaste.length === 0) return "";
-    if (daysToPaste.length === 1) {
-        return `Stai per incollare ${tasksToCopy.length} attività nel giorno ${format(daysToPaste[0], "d MMMM", { locale: it })}. Vuoi continuare?`;
-    }
-    return `Stai per incollare ${tasksToCopy.length} attività su ${daysToPaste.length} giorni selezionati. I giorni con conflitti di durata verranno saltati. Vuoi continuare?`
-  }, [daysToPaste, tasksToCopy.length]);
-
   
   return (
     <div className="space-y-4">
-      <AlertDialog open={isConfirmingPaste} onOpenChange={setIsConfirmingPaste}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Confermi di incollare le attività?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                       {pasteDialogDescription}
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => {
-                      setDaysToPaste([]);
-                      setIsConfirmingPaste(false);
-                    }}>Annulla</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmPaste}>Conferma</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-
-
       {isSameDay(startOfMonth(selectedDate), startOfMonth(today)) && (
           <>
             {missedDaysCurrentMonth.length > 0 ? (
@@ -441,9 +406,6 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                       </PopoverContent>
                   </Popover>
                 </div>
-              <p className="text-sm text-muted-foreground">
-                {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM", { locale: it })}`}
-              </p>
             </div>
           </div>
         </div>
@@ -493,7 +455,37 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                         />
                     </CardContent>
                 </Card>
-                <CopyTasksCard isCopying={isCopying} onToggleCopyMode={handleToggleCopyMode} />
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Copia Attività su più Giorni</CardTitle>
+                        <CardDescription>
+                            {isCopying 
+                                ? (daysToPaste.length > 0 ? `Hai selezionato ${daysToPaste.length} giorni.` : "Usa CTRL/SHIFT per selezionare i giorni.")
+                                : "Copia le attività di oggi in altre date."
+                            }
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-2">
+                         <Button onClick={handleToggleCopyMode} variant={isCopying ? "destructive" : "default"} className="w-full">
+                            {isCopying ? (
+                                <>
+                                    <X className="mr-2 h-4 w-4" />
+                                    Annulla Copia
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Copia Attività del Giorno
+                                </>
+                            )}
+                        </Button>
+                        {isCopying && daysToPaste.length > 0 && (
+                             <Button onClick={handleConfirmPaste} className="w-full">
+                                Incolla su {daysToPaste.length} giorni
+                            </Button>
+                        )}
+                    </CardContent>
+                </Card>
               </div>
               <div className="grid gap-4 auto-rows-max">
                 <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
