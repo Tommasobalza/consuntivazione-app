@@ -189,18 +189,19 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
   const calendarModifiersStyles = {
     logged: {
-      color: 'hsl(142.1 76.2% 36.3%)', // green-600
+      color: '#16a34a',
       fontWeight: 'bold',
     },
     leave: {
       color: 'hsl(var(--accent))',
+      backgroundColor: 'hsl(var(--accent) / 0.1)',
       textDecoration: 'line-through'
     },
     copying: {
       cursor: 'copy'
     },
     missed: {
-      color: 'hsl(var(--destructive) / 0.9)',
+      color: '#dc2626',
       fontWeight: 'bold'
     }
   };
