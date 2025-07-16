@@ -187,11 +187,11 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
 
   const calendarModifiersStyles = {
     logged: {
+      color: 'hsl(142.1 76.2% 36.3%)', // green-600
       fontWeight: 'bold',
-      color: 'hsl(var(--primary))'
     },
     leave: {
-      color: 'hsl(var(--destructive))',
+      color: 'hsl(var(--accent))',
       textDecoration: 'line-through'
     },
     copying: {
