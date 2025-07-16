@@ -110,6 +110,12 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
     setTasks(prevTasks => [...prevTasks, newTask]);
   };
 
+  const handleUpdateTask = (taskId: string, updatedTaskData: Partial<Task>) => {
+    setTasks(prevTasks => prevTasks.map(task => 
+        task.id === taskId ? { ...task, ...updatedTaskData } : task
+    ));
+  };
+
   const handleDeleteTask = (taskId: string) => {
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
   };
@@ -499,7 +505,13 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                 </Card>
               </div>
               <div className="grid gap-4 auto-rows-max">
-                <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
+                <ActivityList 
+                  tasks={tasksForSelectedDate} 
+                  onDeleteTask={handleDeleteTask} 
+                  onClearTasks={handleClearTasks}
+                  isEditable={true}
+                  onUpdateTask={handleUpdateTask}
+                />
               </div>
            </div>
         </TabsContent>

@@ -32,11 +32,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Input } from "./ui/input"
+import { useState } from "react"
 
 interface ActivityListProps {
   tasks: Task[]
   onDeleteTask: (taskId: string) => void
   onClearTasks: () => void;
+  isEditable?: boolean;
+  onUpdateTask?: (taskId: string, updatedTask: Partial<Task>) => void;
 }
 
 const formatDuration = (minutes: number) => {
@@ -50,13 +54,47 @@ const formatDuration = (minutes: number) => {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
 }
 
-export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityListProps) {
+export function ActivityList({ tasks, onDeleteTask, onClearTasks, isEditable = false, onUpdateTask }: ActivityListProps) {
+  const [editingDescriptions, setEditingDescriptions] = useState<Record<string, string>>({});
+
+  const handleDescriptionChange = (taskId: string, value: string) => {
+    setEditingDescriptions(prev => ({ ...prev, [taskId]: value }));
+  };
+
+  const handleDescriptionBlur = (taskId: string) => {
+    if (onUpdateTask && typeof editingDescriptions[taskId] === 'string') {
+      onUpdateTask(taskId, { description: editingDescriptions[taskId] });
+      // Clear the value from local state after saving to avoid holding stale data
+      const newEditingDescriptions = { ...editingDescriptions };
+      delete newEditingDescriptions[taskId];
+      setEditingDescriptions(newEditingDescriptions);
+    }
+  };
+
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, taskId: string) => {
+    if (e.key === 'Enter') {
+      handleDescriptionBlur(taskId);
+      e.currentTarget.blur();
+    }
+    if (e.key === 'Escape') {
+      const newEditingDescriptions = { ...editingDescriptions };
+      delete newEditingDescriptions[taskId];
+      setEditingDescriptions(newEditingDescriptions);
+      e.currentTarget.blur();
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Attività del Giorno</CardTitle>
-          <CardDescription>Registro delle attività per il giorno selezionato.</CardDescription>
+          <CardDescription>
+            {isEditable
+              ? "Modifica la descrizione o cancella le attività."
+              : "Registro delle attività per il giorno selezionato."
+            }
+          </CardDescription>
         </div>
         {tasks.length > 0 && (
           <AlertDialog>
@@ -98,14 +136,28 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
                 tasks.map((task) => {
                   const CategoryIcon = categoryConfig[task.category].icon;
                   const LocationIcon = locationConfig[task.location].icon;
+                  const currentDescription = editingDescriptions[task.id] ?? task.description ?? "";
+
                   return (
                     <TableRow key={task.id}>
                       <TableCell>
                         <div className="flex items-start gap-2">
                            {task.tag && <span className="h-2 w-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: task.tag.color }}></span>}
-                          <div>
+                          <div className="w-full">
                             <p className="font-medium">{task.name}</p>
-                            {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
+                            {isEditable ? (
+                               <Input
+                                  type="text"
+                                  placeholder="Aggiungi una descrizione..."
+                                  value={currentDescription}
+                                  onChange={(e) => handleDescriptionChange(task.id, e.target.value)}
+                                  onBlur={() => handleDescriptionBlur(task.id)}
+                                  onKeyDown={(e) => handleDescriptionKeyDown(e, task.id)}
+                                  className="h-8 text-sm text-muted-foreground"
+                                />
+                            ) : (
+                               task.description && <p className="text-sm text-muted-foreground">{task.description}</p>
+                            )}
                           </div>
                         </div>
                       </TableCell>
