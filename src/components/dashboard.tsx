@@ -7,8 +7,9 @@ import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
 import { SummaryCards } from '@/components/summary-cards';
 import { CategoryDistributionChart } from '@/components/charts/category-distribution-chart';
+import { LocationDistributionChart } from '@/components/charts/location-distribution-chart';
 import { InsightsReport } from '@/components/insights-report';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay } from 'date-fns';
@@ -42,6 +43,15 @@ export function Dashboard() {
       return isSameDay(taskDate, selectedDate);
     });
   }, [tasks, selectedDate]);
+  
+  const tasksForCurrentMonth = useMemo(() => {
+    const startOfCurrentMonth = startOfMonth(new Date());
+    const endOfCurrentMonth = new Date();
+    return tasks.filter(task => {
+      const taskDate = new Date(task.timestamp);
+      return taskDate >= startOfCurrentMonth && taskDate <= endOfCurrentMonth;
+    });
+  }, [tasks]);
 
   const today = startOfDay(new Date());
   const startOfCurrentMonth = startOfMonth(today);
@@ -68,9 +78,11 @@ export function Dashboard() {
     }
   };
 
-  const handleDateChange = (value: string) => {
-    if (value === "today") {
-      setSelectedDate(new Date());
+  const handleTabChange = (value: string) => {
+    if (value === "today" || value === "calendar" || value === "stats") {
+      if (!isSameDay(selectedDate, new Date()) && value === "today") {
+          setSelectedDate(new Date());
+      }
     }
   };
 
@@ -85,11 +97,12 @@ export function Dashboard() {
           </AlertDescription>
         </Alert>
       )}
-      <Tabs defaultValue="today" className="space-y-4" onValueChange={handleDateChange}>
+      <Tabs defaultValue="today" className="space-y-4" onValueChange={handleTabChange}>
         <div className='flex justify-between items-start'>
           <TabsList>
             <TabsTrigger value="today">Oggi</TabsTrigger>
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
+            <TabsTrigger value="stats">Statistiche</TabsTrigger>
           </TabsList>
           <div className="text-right">
             <p className="text-lg font-semibold">{format(selectedDate, "EEEE, d MMMM")}</p>
@@ -105,18 +118,9 @@ export function Dashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="lg:col-span-4 grid gap-4 auto-rows-max">
                 <ActivityLogger onAddTask={handleAddTask} />
-                <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
               </div>
               <div className="lg:col-span-3 grid gap-4 auto-rows-max">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Distribuzione del Tempo</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <CategoryDistributionChart tasks={tasksForSelectedDate} />
-                    </CardContent>
-                </Card>
-                <InsightsReport tasks={tasksForSelectedDate} />
+                 <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
               </div>
             </div>
           </div>
@@ -144,17 +148,35 @@ export function Dashboard() {
                   />
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader>
-                    <CardTitle>Distribuzione del Tempo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <CategoryDistributionChart tasks={tasksForSelectedDate} />
-                </CardContent>
-              </Card>
-              <InsightsReport tasks={tasksForSelectedDate} />
             </div>
           </div>
+        </TabsContent>
+         <TabsContent value="stats" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <div className="lg:col-span-4 grid gap-4 auto-rows-max">
+                 <InsightsReport tasks={tasksForSelectedDate} />
+              </div>
+              <div className="lg:col-span-3 grid gap-4 auto-rows-max">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Distribuzione per Categoria</CardTitle>
+                        <CardDescription>Riepilogo del tempo per il giorno selezionato.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <CategoryDistributionChart tasks={tasksForSelectedDate} />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Distribuzione per Località</CardTitle>
+                        <CardDescription>Riepilogo del tempo per il giorno selezionato.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <LocationDistributionChart tasks={tasksForSelectedDate} />
+                    </CardContent>
+                </Card>
+              </div>
+            </div>
         </TabsContent>
       </Tabs>
     </div>

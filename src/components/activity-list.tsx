@@ -1,6 +1,6 @@
 "use client"
 
-import type { Task, TaskCategory, TaskLocation } from "@/lib/types"
+import type { Task } from "@/lib/types"
 import { categoryConfig, locationConfig } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
@@ -54,8 +54,8 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Attività</CardTitle>
-          <CardDescription>Registro di tutte le attività inserite per il giorno selezionato.</CardDescription>
+          <CardTitle>Attività del Giorno</CardTitle>
+          <CardDescription>Registro delle attività per il giorno selezionato.</CardDescription>
         </div>
         {tasks.length > 0 && (
           <AlertDialog>
