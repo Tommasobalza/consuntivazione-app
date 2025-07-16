@@ -20,6 +20,7 @@ export interface Tag {
 export interface Task {
   id: string;
   name: string;
+  description?: string;
   duration: TaskDuration;
   category: TaskCategory;
   location: TaskLocation;

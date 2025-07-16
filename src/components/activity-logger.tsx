@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,12 +24,14 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { PlusCircle, Tag as TagIcon } from "lucide-react"
 
 const formSchema = z.object({
   name: z.string().min(3, {
     message: "Il nome deve contenere almeno 3 caratteri.",
   }),
+  description: z.string().optional(),
   duration: z.coerce.number().refine(val => taskDurations.includes(val as TaskDuration)),
   category: z.enum(taskCategories),
   location: z.enum(taskLocations),
@@ -56,6 +59,7 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      description: "",
       duration: 30,
       category: "Sviluppo",
       location: "Smart Working",
@@ -70,6 +74,7 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
     form.reset({
         ...form.getValues(),
         name: "",
+        description: "",
         tagId: "manual",
     });
   }
@@ -79,6 +84,7 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
     if (tagId === "manual") {
       form.reset({
         name: "",
+        description: "",
         duration: 30,
         category: "Sviluppo",
         location: "Smart Working",
@@ -89,10 +95,10 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
       if (selectedTag) {
         form.setValue("category", selectedTag.category);
         form.setValue("name", selectedTag.name);
+        form.setValue("description", ""); // Clear description when using a tag
       }
     }
   }
-
 
   return (
     <Card>
@@ -143,12 +149,31 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
                 <FormItem>
                   <FormLabel>Nome Attività</FormLabel>
                   <FormControl>
-                    <Input placeholder="Es: Implementata la nuova funzionalità della dashboard" {...field} />
+                    <Input placeholder="Es: Meeting di progetto" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+             <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrizione (Opzionale)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Aggiungi dettagli sull'attività, come decisioni prese o prossimi passi."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                <FormField
                 control={form.control}
