@@ -13,12 +13,13 @@ import { InsightsReport } from '@/components/insights-report';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
-import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isEqual } from 'date-fns';
+import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear, isEqual, subDays } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
+import { Button } from './ui/button';
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
@@ -68,12 +69,12 @@ export function Dashboard() {
   }, [tasks, selectedMonth, selectedYear, selectedCategory, selectedLocation]);
 
   const today = startOfDay(new Date());
-  const startOfCurrentMonth = startOfMonth(today);
+  const startOfCurrentMonth = startOfMonth(new Date(selectedYear, selectedMonth));
   
-  const daysInMonth = useMemo(() => 
-    eachDayOfInterval({ start: startOfCurrentMonth, end: today }), 
-    [startOfCurrentMonth, today]
-  );
+  const daysInMonth = useMemo(() => {
+    const monthEndDate = isSameDay(startOfCurrentMonth, startOfMonth(today)) ? today : new Date(selectedYear, selectedMonth + 1, 0);
+    return eachDayOfInterval({ start: startOfCurrentMonth, end: monthEndDate });
+  }, [startOfCurrentMonth, today, selectedYear, selectedMonth]);
 
   const missedDays = useMemo(() => {
     const loggedDays = new Set(tasks.map(task => startOfDay(new Date(task.timestamp)).toDateString()));
@@ -92,9 +93,19 @@ export function Dashboard() {
     }
   };
 
+  const handleDateChange = (days: number) => {
+    setSelectedDate(currentDate => addDays(currentDate, days));
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value === "home") {
+        setSelectedDate(new Date());
+    }
+  };
+  
   return (
     <div className="space-y-4">
-      {missedDays.length > 0 && isSameDay(selectedDate, today) && (
+       {missedDays.length > 0 && (
         <Alert variant="destructive" className="mt-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Hai dei giorni non registrati!</AlertTitle>
@@ -103,22 +114,30 @@ export function Dashboard() {
           </AlertDescription>
         </Alert>
       )}
-      <Tabs defaultValue="today" className="space-y-4">
+      <Tabs defaultValue="home" className="space-y-4" onValueChange={handleTabChange}>
         <div className='flex justify-between items-start'>
           <TabsList>
-            <TabsTrigger value="today">Oggi</TabsTrigger>
+            <TabsTrigger value="home">Home</TabsTrigger>
             <TabsTrigger value="calendar">Calendario</TabsTrigger>
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
           </TabsList>
            <div className="text-right">
-            <p className="text-lg font-semibold">{isEqual(startOfDay(selectedDate), startOfDay(new Date())) ? "Oggi" : format(selectedDate, "EEEE, d MMMM")}</p>
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)} disabled={isBefore(selectedDate, addDays(today, -365))}>
+                    <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <p className="text-lg font-semibold min-w-[220px] text-center">{isSameDay(selectedDate, today) ? "Oggi" : format(selectedDate, "EEEE, d MMMM")}</p>
+                 <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)} disabled={isSameDay(selectedDate, today) || isBefore(today, selectedDate)}>
+                    <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
             <p className="text-sm text-muted-foreground">
               {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM")}`}
             </p>
           </div>
         </div>
         
-        <TabsContent value="today" className="space-y-4">
+        <TabsContent value="home" className="space-y-4">
            <div className="space-y-4">
             <SummaryCards tasks={tasksForSelectedDate} />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
