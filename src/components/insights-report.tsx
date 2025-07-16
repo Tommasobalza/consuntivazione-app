@@ -36,7 +36,7 @@ export function InsightsReport({ tasks }: InsightsReportProps) {
       try {
         const dailyLogs = tasks
           .map(
-            (task) => `- ${task.duration} minuti su '${task.category}' (${task.location}): ${task.description}`
+            (task) => `- ${task.duration} minuti su '${task.category}' (${task.location}): ${task.name}`
           )
           .join("\n")
 

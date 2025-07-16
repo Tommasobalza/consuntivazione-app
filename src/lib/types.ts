@@ -1,4 +1,3 @@
-
 import type { LucideIcon } from 'lucide-react';
 import { Briefcase, Code, GraduationCap, Grip, Laptop, Building, User, Bot, Shell, Smile, Star } from 'lucide-react';
 
@@ -20,7 +19,7 @@ export interface Tag {
 
 export interface Task {
   id: string;
-  description: string;
+  name: string;
   duration: TaskDuration;
   category: TaskCategory;
   location: TaskLocation;

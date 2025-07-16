@@ -85,7 +85,7 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Descrizione</TableHead>
+                <TableHead>Nome Attività</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead>Località</TableHead>
                 <TableHead className="text-right">Durata</TableHead>
@@ -102,7 +102,7 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                            {task.tag && <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: task.tag.color }}></span>}
-                          <span>{task.description}</span>
+                          <span>{task.name}</span>
                         </div>
                         </TableCell>
                       <TableCell>
