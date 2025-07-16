@@ -307,7 +307,6 @@ export function Dashboard() {
         
         <TabsContent value="home" className="space-y-4">
            <div className="space-y-4">
-            <SummaryCards tasks={tasksForSelectedDate} isLeaveDay={isLeaveDay} />
             <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
               <div className="grid gap-4 auto-rows-max">
                  {isLeaveDay ? (
@@ -369,6 +368,7 @@ export function Dashboard() {
             selectedLocation={selectedLocation}
             setSelectedLocation={setSelectedLocation}
           />
+          <SummaryCards tasks={filteredTasksForStats} />
           <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
               <div className="grid gap-4 auto-rows-max">
                  <InsightsReport tasks={filteredTasksForStats} />
@@ -400,5 +400,3 @@ export function Dashboard() {
     </div>
   );
 }
-
-    
