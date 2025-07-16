@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay, UserProfile, SaveSettings, DateRange } from '@/lib/types';
+import type { Task, Tag, TaskCategory, TaskLocation, LeaveDay, UserProfile, SaveSettings } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { ActivityLogger } from '@/components/activity-logger';
 import { ActivityList } from '@/components/activity-list';
@@ -58,8 +58,10 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const [isCopying, setIsCopying] = useState(false);
   const [tasksToCopy, setTasksToCopy] = useState<Omit<Task, 'id' | 'timestamp'>[]>([]);
 
-  const [range, setRange] = useState<DateRange | undefined>(undefined);
+  const [daysToPaste, setDaysToPaste] = useState<Date[]>([]);
   const [isConfirmingPaste, setIsConfirmingPaste] = useState(false);
+  const [lastSelectedDay, setLastSelectedDay] = useState<Date | undefined>(undefined);
+
 
   useEffect(() => {
     if (!saveSettings.autoSave) {
@@ -219,28 +221,45 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
   const handleDateChange = (days: number) => {
     setSelectedDate(currentDate => addDays(currentDate, days));
   };
-
+  
   const handleDayClick = (day: Date, modifiers: { selected?: boolean }, e: React.MouseEvent) => {
     if (isCopying) {
-        if (e.shiftKey && range?.from) {
-            const newRange = { from: range.from, to: day };
-            setRange(newRange);
-            setIsConfirmingPaste(true);
+        let newDaysToPaste = [...daysToPaste];
+        if (e.shiftKey && lastSelectedDay) {
+            const range = eachDayOfInterval({
+                start: new Date(Math.min(lastSelectedDay.getTime(), day.getTime())),
+                end: new Date(Math.max(lastSelectedDay.getTime(), day.getTime())),
+            });
+            newDaysToPaste = range;
+        } else if (e.ctrlKey) {
+            const dayIndex = newDaysToPaste.findIndex(d => isSameDay(d, day));
+            if (dayIndex > -1) {
+                newDaysToPaste.splice(dayIndex, 1);
+            } else {
+                newDaysToPaste.push(day);
+            }
         } else {
-            setRange({ from: day, to: undefined });
+            newDaysToPaste = [day];
         }
+        setDaysToPaste(newDaysToPaste);
+        setLastSelectedDay(day);
+
+        if (newDaysToPaste.length > 0) {
+          setIsConfirmingPaste(true);
+        }
+
     } else {
         setSelectedDate(day);
         setCalendarMonth(startOfMonth(day));
     }
   };
 
-
   const handleToggleCopyMode = () => {
     if (isCopying) {
       setIsCopying(false);
       setTasksToCopy([]);
-      setRange(undefined);
+      setDaysToPaste([]);
+      setLastSelectedDay(undefined);
     } else {
       const tasksOnSelectedDay = tasks.filter(task => isSameDay(new Date(task.timestamp), selectedDate));
       if (tasksOnSelectedDay.length === 0) {
@@ -256,31 +275,25 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
       setIsCopying(true);
       toast({
         title: "Modalità copia attiva",
-        description: "Seleziona una data o un intervallo (con SHIFT) sul calendario per incollare."
+        description: "Seleziona una o più date sul calendario per incollare."
       });
     }
   };
 
   const handleConfirmPaste = () => {
-    if (!range) return;
-
-    const from = range.from ? startOfDay(range.from) : undefined;
-    const to = range.to ? startOfDay(range.to) : from;
-
-    if (!from) return;
-
-    const daysInInterval = eachDayOfInterval({ start: from, end: to });
+    if (!daysToPaste.length) return;
 
     const newTasks: Task[] = [];
     let conflictedDays = 0;
 
-    daysInInterval.forEach(day => {
-        if (isWeekend(day)) return;
+    daysToPaste.forEach(day => {
+        const dayStart = startOfDay(day);
+        if (isWeekend(dayStart)) return;
 
-        const leaveOnDay = leaveDays.some(d => isSameDay(new Date(d.date), day));
+        const leaveOnDay = leaveDays.some(d => isSameDay(new Date(d.date), dayStart));
         if (leaveOnDay) return;
 
-        const tasksOnDay = tasks.filter(t => isSameDay(new Date(t.timestamp), day));
+        const tasksOnDay = tasks.filter(t => isSameDay(new Date(t.timestamp), dayStart));
         const durationOnDay = tasksOnDay.reduce((sum, task) => sum + task.duration, 0);
         const durationToCopy = tasksToCopy.reduce((sum, task) => sum + task.duration, 0);
 
@@ -293,7 +306,7 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
             newTasks.push({
                 ...taskToCopy,
                 id: crypto.randomUUID(),
-                timestamp: day.toISOString(),
+                timestamp: dayStart.toISOString(),
             });
         });
     });
@@ -312,10 +325,10 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         });
     }
 
-
     setIsCopying(false);
     setTasksToCopy([]);
-    setRange(undefined);
+    setDaysToPaste([]);
+    setLastSelectedDay(undefined);
     setIsConfirmingPaste(false);
   };
 
@@ -329,6 +342,15 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
         setCalendarMonth(startOfMonth(selectedDate));
     }
   };
+
+  const pasteDialogDescription = useMemo(() => {
+    if (daysToPaste.length === 0) return "";
+    if (daysToPaste.length === 1) {
+        return `Stai per incollare ${tasksToCopy.length} attività nel giorno ${format(daysToPaste[0], "d MMMM", { locale: it })}. Vuoi continuare?`;
+    }
+    return `Stai per incollare ${tasksToCopy.length} attività su ${daysToPaste.length} giorni selezionati. I giorni con conflitti di durata verranno saltati. Vuoi continuare?`
+  }, [daysToPaste, tasksToCopy.length]);
+
   
   return (
     <div className="space-y-4">
@@ -337,14 +359,12 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                 <AlertDialogHeader>
                     <AlertDialogTitle>Confermi di incollare le attività?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Stai per incollare {tasksToCopy.length} attività su tutti i giorni lavorativi
-                        dal {range?.from && format(range.from, "d MMMM", { locale: it })} al {range?.to && format(range.to, "d MMMM", { locale: it })}.
-                        I giorni con attività esistenti che supererebbero le 8 ore verranno saltati. Vuoi continuare?
+                       {pasteDialogDescription}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => {
-                      setRange(undefined);
+                      setDaysToPaste([]);
                       setIsConfirmingPaste(false);
                     }}>Annulla</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmPaste}>Conferma</AlertDialogAction>
@@ -455,13 +475,13 @@ export function Dashboard({ userProfile, setUserProfile, saveSettings, setSaveSe
                  <Card className={isCopying ? "border-primary ring-2 ring-primary" : ""}>
                     <CardHeader>
                         <CardTitle>Panoramica Calendario</CardTitle>
-                        {isCopying && <CardDescription className="text-primary font-semibold">Modalità Incolla: Seleziona una data o un intervallo (con SHIFT).</CardDescription>}
+                        {isCopying && <CardDescription className="text-primary font-semibold">Modalità Incolla: Seleziona date o intervalli (con SHIFT/CTRL).</CardDescription>}
                     </CardHeader>
                     <CardContent className="flex justify-center">
                         <Calendar
                            mode="multiple"
                            min={0}
-                           selected={isCopying ? (range ? [range.from, range.to] : []) : [selectedDate]}
+                           selected={isCopying ? daysToPaste : [selectedDate]}
                            onDayClick={handleDayClick}
                            month={calendarMonth}
                            onMonthChange={setCalendarMonth}

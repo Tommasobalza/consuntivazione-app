@@ -17,8 +17,8 @@ export function CopyTasksCard({ isCopying, onToggleCopyMode }: CopyTasksCardProp
         <CardTitle>Copia Attività su più Giorni</CardTitle>
         <CardDescription>
           {isCopying
-            ? "Seleziona un giorno di inizio, poi tieni premuto SHIFT e clicca su un giorno di fine per incollare le attività sull'intervallo."
-            : "Copia le attività di questo giorno in un'altra data o su un intervallo di date."}
+            ? "Usa CTRL+Click per selezionare più giorni o SHIFT+Click per un intervallo."
+            : "Copia le attività di questo giorno in altre date."}
         </CardDescription>
       </CardHeader>
       <CardContent>
