@@ -4,8 +4,8 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { Tag, TaskCategory, TaskDuration, TaskLocation } from "@/lib/types";
-import { taskCategories, categoryConfig, taskDurations, taskLocations, locationConfig, tailwindColors } from "@/lib/types";
+import type { Tag, TaskCategory } from "@/lib/types";
+import { taskCategories, tailwindColors } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,7 +32,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -47,10 +46,7 @@ import { Badge } from "./ui/badge";
 const tagFormSchema = z.object({
   name: z.string().min(2, "Il nome deve avere almeno 2 caratteri."),
   color: z.string().min(1, "Seleziona un colore."),
-  description: z.string().min(3, "La descrizione deve contenere almeno 3 caratteri."),
-  duration: z.coerce.number().refine(val => taskDurations.includes(val as TaskDuration)),
   category: z.enum(taskCategories),
-  location: z.enum(taskLocations),
 });
 
 type TagFormValues = z.infer<typeof tagFormSchema>;
@@ -58,14 +54,6 @@ type TagFormValues = z.infer<typeof tagFormSchema>;
 interface TagManagerProps {
   tags: Tag[];
   setTags: React.Dispatch<React.SetStateAction<Tag[]>>;
-}
-
-const formatDurationLabel = (minutes: TaskDuration) => {
-  if (minutes === 480) return "Tutto il giorno (8 ore)";
-  if (minutes === 240) return "Metà giornata (4 ore)";
-  if (minutes === 60) return "1 ora";
-  if (minutes === 30) return "30 minuti";
-  return `${minutes} min`;
 }
 
 export function TagManager({ tags, setTags }: TagManagerProps) {
@@ -77,10 +65,7 @@ export function TagManager({ tags, setTags }: TagManagerProps) {
     defaultValues: {
       name: "",
       color: tailwindColors[0],
-      description: "",
-      duration: 30,
       category: "Sviluppo",
-      location: "Smart Working",
     },
   });
 
@@ -91,10 +76,7 @@ export function TagManager({ tags, setTags }: TagManagerProps) {
       form.reset({
         name: "",
         color: tailwindColors[0],
-        description: "",
-        duration: 30,
         category: "Sviluppo",
-        location: "Smart Working",
       });
     }
   }, [editingTag, form]);
@@ -155,69 +137,18 @@ export function TagManager({ tags, setTags }: TagManagerProps) {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrizione Attività</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Es: Partecipazione al daily standup del team" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="category"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Categoria</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {taskCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="duration"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Durata</FormLabel>
-                            <Select onValueChange={(v) => field.onChange(Number(v))} value={String(field.value)}>
-                            <FormControl>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {taskDurations.map((d) => <SelectItem key={d} value={String(d)}>{formatDurationLabel(d)}</SelectItem>)}
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                </div>
-                <FormField
+                 <FormField
                     control={form.control}
-                    name="location"
+                    name="category"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Località</FormLabel>
+                        <FormLabel>Categoria Principale</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            {taskLocations.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                            {taskCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                         </Select>
                         <FormMessage />
@@ -265,8 +196,6 @@ export function TagManager({ tags, setTags }: TagManagerProps) {
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: tag.color }} />
                     <span className="font-medium">{tag.name}</span>
                     <Badge variant="outline">{tag.category}</Badge>
-                    <Badge variant="outline">{formatDurationLabel(tag.duration)}</Badge>
-
                   </div>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenDialog(tag)}>

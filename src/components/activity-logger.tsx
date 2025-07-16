@@ -87,10 +87,8 @@ export function ActivityLogger({ onAddTask, tags }: ActivityLoggerProps) {
     } else {
       const selectedTag = tags.find(t => t.id === tagId);
       if (selectedTag) {
-        form.setValue("description", selectedTag.description);
         form.setValue("category", selectedTag.category);
-        form.setValue("duration", selectedTag.duration);
-        form.setValue("location", selectedTag.location);
+        form.setValue("description", selectedTag.name);
       }
     }
   }
