@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { addDays, format, startOfMonth, eachDayOfInterval, isBefore, isSameDay, startOfDay, getMonth, getYear } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { TagManager } from './tag-manager';
 import { GlobalFilters } from './global-filters';
 import { PresenceStats } from './presence-stats';
@@ -24,6 +24,7 @@ import { Button } from './ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { LeaveManager } from './leave-manager';
 import { CopyTasksCard } from './copy-tasks-card';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 export function Dashboard() {
   const [tasks, setTasks] = useLocalStorage<Task[]>('daily-tasks', []);
@@ -248,7 +249,7 @@ export function Dashboard() {
             <TabsTrigger value="stats">Statistiche</TabsTrigger>
           </TabsList>
            <div className="text-right">
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-1">
                 <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)}>
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
@@ -256,6 +257,25 @@ export function Dashboard() {
                  <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)}>
                     <ChevronRight className="h-5 w-5" />
                 </Button>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <CalendarIcon className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => {
+                                if (date) setSelectedDate(date);
+                            }}
+                            initialFocus
+                            locale={it}
+                            weekStartsOn={1}
+                        />
+                    </PopoverContent>
+                </Popover>
               </div>
             <p className="text-sm text-muted-foreground">
               {isSameDay(selectedDate, new Date()) ? "Visualizzando le attività di oggi" : `Visualizzando le attività per ${format(selectedDate, "d MMMM", { locale: it })}`}
@@ -358,5 +378,7 @@ export function Dashboard() {
     </div>
   );
 }
+
+    
 
     
