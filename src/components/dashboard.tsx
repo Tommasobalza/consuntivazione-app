@@ -65,26 +65,9 @@ export function Dashboard() {
   };
 
   return (
-    <Tabs defaultValue="today" className="space-y-4" onValueChange={(value) => {
-      if (value === "today") {
-        setSelectedDate(new Date());
-      }
-    }}>
-      <div className='flex justify-between items-start'>
-        <TabsList>
-          <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-        </TabsList>
-        <div className="text-right">
-          <p className="text-lg font-semibold">{format(selectedDate, "EEEE, MMMM do")}</p>
-          <p className="text-sm text-muted-foreground">
-            {isSameDay(selectedDate, new Date()) ? "Viewing Today's Tasks" : `Viewing Tasks for ${format(selectedDate, "MMMM do")}`}
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {missedDays.length > 0 && isSameDay(selectedDate, today) && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="mt-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>You have unlogged days!</AlertTitle>
           <AlertDescription>
@@ -92,64 +75,82 @@ export function Dashboard() {
           </AlertDescription>
         </Alert>
       )}
-
-      <TabsContent value="today" className="space-y-4">
-         <div className="space-y-4">
-          <SummaryCards tasks={tasksForSelectedDate} />
+      <Tabs defaultValue="today" className="space-y-4" onValueChange={(value) => {
+        if (value === "today") {
+          setSelectedDate(new Date());
+        }
+      }}>
+        <div className='flex justify-between items-start'>
+          <TabsList>
+            <TabsTrigger value="today">Today</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          </TabsList>
+          <div className="text-right">
+            <p className="text-lg font-semibold">{format(selectedDate, "EEEE, MMMM do")}</p>
+            <p className="text-sm text-muted-foreground">
+              {isSameDay(selectedDate, new Date()) ? "Viewing Today's Tasks" : `Viewing Tasks for ${format(selectedDate, "MMMM do")}`}
+            </p>
+          </div>
+        </div>
+        
+        <TabsContent value="today" className="space-y-4">
+           <div className="space-y-4">
+            <SummaryCards tasks={tasksForSelectedDate} />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <div className="lg:col-span-4 grid gap-4 auto-rows-max">
+                <ActivityLogger onAddTask={handleAddTask} />
+                <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
+              </div>
+              <div className="lg:col-span-3 grid gap-4 auto-rows-max">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Time Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CategoryDistributionChart tasks={tasksForSelectedDate} />
+                    </CardContent>
+                </Card>
+                <InsightsReport tasks={tasksForSelectedDate} />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="calendar" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <div className="lg:col-span-4 grid gap-4 auto-rows-max">
               <ActivityLogger onAddTask={handleAddTask} />
               <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
             </div>
             <div className="lg:col-span-3 grid gap-4 auto-rows-max">
-               <Card>
-                  <CardHeader>
-                      <CardTitle>Time Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                      <CategoryDistributionChart tasks={tasksForSelectedDate} />
-                  </CardContent>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Select a Day</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    modifiers={loggedDaysModifiers}
+                    modifiersStyles={loggedDaysModifiersStyles}
+                    className="rounded-md border"
+                    disabled={(date) => date > new Date() || date < addDays(new Date(), -365)}
+                  />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                    <CardTitle>Time Distribution</CardTitle>
+                </Header>
+                <CardContent>
+                    <CategoryDistributionChart tasks={tasksForSelectedDate} />
+                </CardContent>
               </Card>
               <InsightsReport tasks={tasksForSelectedDate} />
             </div>
           </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="calendar" className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="lg:col-span-4 grid gap-4 auto-rows-max">
-            <ActivityLogger onAddTask={handleAddTask} />
-            <ActivityList tasks={tasksForSelectedDate} onDeleteTask={handleDeleteTask} onClearTasks={handleClearTasks} />
-          </div>
-          <div className="lg:col-span-3 grid gap-4 auto-rows-max">
-            <Card>
-              <CardHeader>
-                <CardTitle>Select a Day</CardTitle>
-              </CardHeader>
-              <CardContent className="flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  modifiers={loggedDaysModifiers}
-                  modifiersStyles={loggedDaysModifiersStyles}
-                  className="rounded-md border"
-                  disabled={(date) => date > new Date() || date < addDays(new Date(), -365)}
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                  <CardTitle>Time Distribution</CardTitle>
-              </Header>
-              <CardContent>
-                  <CategoryDistributionChart tasks={tasksForSelectedDate} />
-              </CardContent>
-            </Card>
-            <InsightsReport tasks={tasksForSelectedDate} />
-          </div>
-        </div>
-      </TabsContent>
-    </Tabs>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
