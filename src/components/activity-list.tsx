@@ -1,7 +1,7 @@
 "use client"
 
-import type { Task } from "@/lib/types"
-import { categoryConfig } from "@/lib/types"
+import type { Task, TaskCategory, TaskLocation } from "@/lib/types"
+import { categoryConfig, locationConfig } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -44,6 +44,8 @@ const formatDuration = (minutes: number) => {
   }
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
+  if (hours === 8 && mins === 0) return "Tutto il giorno";
+  if (hours === 4 && mins === 0) return "Metà giornata";
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
 }
 
@@ -52,27 +54,27 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Activities</CardTitle>
-          <CardDescription>A log of all tasks recorded for the selected day.</CardDescription>
+          <CardTitle>Attività</CardTitle>
+          <CardDescription>Registro di tutte le attività inserite per il giorno selezionato.</CardDescription>
         </div>
         {tasks.length > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
                 <XCircle className="mr-2 h-4 w-4" />
-                Clear All
+                Cancella Tutto
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>Sei assolutamente sicuro?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete all activities for the selected day.
+                  Questa azione non può essere annullata. Eliminerà in modo permanente tutte le attività per il giorno selezionato.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onClearTasks}>Continue</AlertDialogAction>
+                <AlertDialogCancel>Annulla</AlertDialogCancel>
+                <AlertDialogAction onClick={onClearTasks}>Continua</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -83,23 +85,31 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Duration</TableHead>
+                <TableHead>Descrizione</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Località</TableHead>
+                <TableHead className="text-right">Durata</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tasks.length > 0 ? (
                 tasks.map((task) => {
-                  const Icon = categoryConfig[task.category].icon
+                  const CategoryIcon = categoryConfig[task.category].icon;
+                  const LocationIcon = locationConfig[task.location].icon;
                   return (
                     <TableRow key={task.id}>
                       <TableCell className="font-medium">{task.description}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="flex items-center gap-2 w-fit">
-                          <Icon className="h-4 w-4" style={{ color: categoryConfig[task.category].color }} />
+                          <CategoryIcon className="h-4 w-4" style={{ color: categoryConfig[task.category].color }} />
                           {task.category}
+                        </Badge>
+                      </TableCell>
+                       <TableCell>
+                        <Badge variant="outline" className="flex items-center gap-2 w-fit">
+                          <LocationIcon className="h-4 w-4 text-muted-foreground" />
+                          {task.location}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">{formatDuration(task.duration)}</TableCell>
@@ -108,7 +118,7 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
                           variant="ghost"
                           size="icon"
                           onClick={() => onDeleteTask(task.id)}
-                          aria-label="Delete task"
+                          aria-label="Cancella attività"
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -118,8 +128,8 @@ export function ActivityList({ tasks, onDeleteTask, onClearTasks }: ActivityList
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    No activities logged for the selected day.
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    Nessuna attività registrata per il giorno selezionato.
                   </TableCell>
                 </TableRow>
               )}

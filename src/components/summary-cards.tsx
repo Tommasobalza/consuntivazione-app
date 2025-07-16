@@ -27,32 +27,32 @@ export function SummaryCards({ tasks }: SummaryCardsProps) {
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Time Logged</CardTitle>
+          <CardTitle className="text-sm font-medium">Tempo Totale Registrato</CardTitle>
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatTotalDuration(totalDuration)}</div>
-          <p className="text-xs text-muted-foreground">Logged today</p>
+          <p className="text-xs text-muted-foreground">Registrato per oggi</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Tasks Completed</CardTitle>
+          <CardTitle className="text-sm font-medium">Attività Completate</CardTitle>
           <ListChecks className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{taskCount}</div>
-          <p className="text-xs text-muted-foreground">Activities recorded</p>
+          <p className="text-xs text-muted-foreground">Attività registrate</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Focus Areas</CardTitle>
+          <CardTitle className="text-sm font-medium">Aree di Focus</CardTitle>
           <BrainCircuit className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{uniqueCategories}</div>
-          <p className="text-xs text-muted-foreground">Unique categories worked on</p>
+          <p className="text-xs text-muted-foreground">Categorie uniche di lavoro</p>
         </CardContent>
       </Card>
     </div>

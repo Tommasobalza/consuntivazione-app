@@ -22,8 +22,8 @@ export function InsightsReport({ tasks }: InsightsReportProps) {
     startTransition(async () => {
       if (tasks.length === 0) {
         toast({
-          title: "No tasks to analyze",
-          description: "Please log some activities before generating a report.",
+          title: "Nessuna attività da analizzare",
+          description: "Registra qualche attività prima di generare un report.",
           variant: "destructive",
         })
         return
@@ -32,17 +32,17 @@ export function InsightsReport({ tasks }: InsightsReportProps) {
       try {
         const dailyLogs = tasks
           .map(
-            (task) => `- ${task.duration} minutes on '${task.category}': ${task.description}`
+            (task) => `- ${task.duration} minuti su '${task.category}' (${task.location}): ${task.description}`
           )
           .join("\n")
 
         const result = await generateInsightsReport({ dailyLogs })
         setReport(result.insights)
       } catch (error) {
-        console.error("Failed to generate report:", error)
+        console.error("Errore nella generazione del report:", error)
         toast({
-          title: "Error Generating Report",
-          description: "An unexpected error occurred. Please try again later.",
+          title: "Errore durante la generazione del Report",
+          description: "Si è verificato un errore inaspettato. Riprova più tardi.",
           variant: "destructive",
         })
         setReport(null)
@@ -53,21 +53,21 @@ export function InsightsReport({ tasks }: InsightsReportProps) {
   return (
     <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle>AI-Powered Insights</CardTitle>
-        <CardDescription>Generate a report to find patterns in your work.</CardDescription>
+        <CardTitle>Approfondimenti IA</CardTitle>
+        <CardDescription>Genera un report per scoprire pattern nel tuo lavoro.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
         {report ? (
           <Alert>
             <Lightbulb className="h-4 w-4" />
-            <AlertTitle>Your Insights Report</AlertTitle>
+            <AlertTitle>Il tuo Report di Approfondimenti</AlertTitle>
             <AlertDescription className="whitespace-pre-wrap font-mono text-xs">
               {report}
             </AlertDescription>
           </Alert>
         ) : (
           <div className="flex items-center justify-center text-sm text-muted-foreground h-full">
-            <p>Your generated report will appear here.</p>
+            <p>Il report generato apparirà qui.</p>
           </div>
         )}
       </CardContent>
@@ -78,7 +78,7 @@ export function InsightsReport({ tasks }: InsightsReportProps) {
           ) : (
             <Lightbulb className="mr-2 h-4 w-4" />
           )}
-          {isPending ? "Generating..." : "Generate Report"}
+          {isPending ? "Generazione..." : "Genera Report"}
         </Button>
       </CardFooter>
     </Card>

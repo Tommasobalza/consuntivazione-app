@@ -31,9 +31,9 @@ const prompt = ai.definePrompt({
   name: 'generateInsightsReportPrompt',
   input: {schema: GenerateInsightsReportInputSchema},
   output: {schema: GenerateInsightsReportOutputSchema},
-  prompt: `You are an AI assistant that analyzes daily logs and extracts meaningful insights, such as time spent on different categories and possible bottlenecks, to help the user improve their time management.
+  prompt: `Sei un assistente IA che analizza i log giornalieri ed estrae spunti significativi, come il tempo trascorso in diverse categorie, la distribuzione del lavoro tra smart working e sede, e possibili colli di bottiglia, per aiutare l'utente a migliorare la gestione del tempo. L'output deve essere in italiano.
 
-  Analyze the following daily logs and generate a report of insights:
+  Analizza i seguenti log giornalieri e genera un report di approfondimenti:
   {{dailyLogs}}`,
 });
 
